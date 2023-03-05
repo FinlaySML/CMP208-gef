@@ -22,6 +22,7 @@ namespace gef
 	public:
 		PlatformD3D11(HINSTANCE hinstance, UInt32 width, UInt32 height, bool fullscreen, bool vsync_enabled, HWND hwnd = NULL);
 		~PlatformD3D11();
+		LRESULT HandleWindowMessage(HWND hwnd, UINT umessage, WPARAM wparam, LPARAM lparam);
 		void Resize(UInt32 width, UInt32 height);
 #if 0
 		Mesh* CreateMesh();
@@ -71,6 +72,8 @@ namespace gef
 		inline HWND top_level_hwnd() const { return top_level_hwnd_; }
 		inline IDXGISwapChain* swap_chain() const { return swap_chain_; }
 	private:
+		static LRESULT CALLBACK WindowMessageCallback(HWND hwnd, UINT umessage, WPARAM wparam, LPARAM lparam);
+		
 		ID3D11RenderTargetView* GetRenderTargetView() const;
 		ID3D11DepthStencilView* GetDepthStencilView() const;
 
@@ -79,6 +82,7 @@ namespace gef
 		void ReleaseDeviceAndSwapChain();
 		HRESULT CreateDepthStencilBuffer();
 		void SetupViewport() const;
+
 
 		WindowWin32* window_;
 		UInt64		clock_last_frame_;

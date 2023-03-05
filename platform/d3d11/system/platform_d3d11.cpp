@@ -41,7 +41,7 @@ namespace gef
 		// create window if window has not already been provided
 		if(hwnd == NULL)
 		{
-			window_ = new WindowWin32(hinstance, width, height, fullscreen, NULL);
+			window_ = new WindowWin32(hinstance, width, height, fullscreen, PlatformD3D11::WindowMessageCallback);
 			set_width(window_->width());
 			set_height(window_->height());
 			hwnd_ = window_->hwnd();
@@ -52,16 +52,15 @@ namespace gef
 			set_height(height);
 			hwnd_ = hwnd;
 		}
+		//Store long ptr so this platform object can be accessed in static callback
+		SetWindowLongPtr(hwnd_, GWLP_USERDATA, (LONG_PTR)this);
+
 		// initialise top level wnd the same as the rendering hwnd
 		// top level wnd can be overriden externally
 		top_level_hwnd_ = hwnd_;
 
-
-
 		// Store the vsync setting.
 		vsync_enabled_ = vsync_enabled;
-
-
 
 		bool success = true;
 		success = InitDeviceAndSwapChain(fullscreen);
@@ -104,6 +103,41 @@ namespace gef
 	PlatformD3D11::~PlatformD3D11()
 	{
 		Release();
+	}
+
+	LRESULT PlatformD3D11::HandleWindowMessage(HWND hwnd, UINT umessage, WPARAM wparam, LPARAM lparam)
+	{
+		switch (umessage)
+		{
+		// Check if the window has resized
+		case WM_SIZE:
+		{
+			UINT width = LOWORD(lparam);
+			UINT height = HIWORD(lparam);
+			Resize(width, height);
+			return 0;
+		}
+
+		// Check if the window is being destroyed.
+		case WM_DESTROY:
+		{
+			PostQuitMessage(0);
+			return 0;
+		}
+
+		// Check if the window is being closed.
+		case WM_CLOSE:
+		{
+			PostQuitMessage(0);
+			return 0;
+		}
+
+		// All other messages pass to the message handler in the system class.
+		default:
+		{
+			return DefWindowProc(hwnd, umessage, wparam, lparam);
+		}
+		}
 	}
 
 	void PlatformD3D11::Release()
@@ -416,24 +450,22 @@ namespace gef
 			device_context_->ClearDepthStencilView(depth_stencil_view, clear_flags, depth_clear_value(), stencil_clear_value());
 		}
 	}
-
 	bool PlatformD3D11::Update()
 	{
 		if(touch_input_manager_)
 			touch_input_manager_->CleanupReleasedTouches();
 
-		// Initialize the message structure.
+		// Handle the windows messages.
 		MSG msg;
 		ZeroMemory(&msg, sizeof(MSG));
-
-		// Handle the windows messages.
-		if(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
+			if (msg.message == WM_QUIT) return false;
 		}
-
-		return msg.message != WM_QUIT;
+		
+		return true;
 	}
 
 	float PlatformD3D11::GetFrameTime()
@@ -493,6 +525,13 @@ namespace gef
 
 	void PlatformD3D11::EndScene() const
 	{
+	}
+
+	LRESULT PlatformD3D11::WindowMessageCallback(HWND hwnd, UINT umessage, WPARAM wparam, LPARAM lparam)
+	{
+		PlatformD3D11* that = (PlatformD3D11*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+		if(that == nullptr) return DefWindowProc(hwnd, umessage, wparam, lparam);
+		that->HandleWindowMessage(hwnd, umessage, wparam, lparam);
 	}
 
 	ID3D11RenderTargetView* PlatformD3D11::GetRenderTargetView() const

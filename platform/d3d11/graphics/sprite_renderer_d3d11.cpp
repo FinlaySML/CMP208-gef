@@ -128,6 +128,8 @@ namespace gef
 
 		vertex_buffer_->Bind(platform_);
 
+		projection_matrix_ = platform_.OrthographicFrustum(0.0f, (float)platform_.width(), 0.0f, (float)platform_.height(), -1.0f, 1.0f);
+
 		if (shader_ == &default_shader_)
 		{
 
