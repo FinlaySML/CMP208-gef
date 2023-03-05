@@ -20,10 +20,12 @@ namespace gef
 	class PlatformD3D11 : public Platform
 	{
 	public:
-		PlatformD3D11(HINSTANCE hinstance, UInt32 width, UInt32 height, bool fullscreen, bool vsync_enabled, HWND hwnd = NULL);
+		PlatformD3D11(HINSTANCE hinstance, UInt32 width, UInt32 height, bool vsync_enabled, HWND hwnd = NULL);
 		~PlatformD3D11();
 		LRESULT HandleWindowMessage(HWND hwnd, UINT umessage, WPARAM wparam, LPARAM lparam);
 		void Resize(UInt32 width, UInt32 height);
+		void SetFullscreen(bool value) override;
+		bool Fullscreen() override;
 #if 0
 		Mesh* CreateMesh();
 		class Texture* CreateTexture(const ImageData& image_data) const;
@@ -78,7 +80,7 @@ namespace gef
 		ID3D11DepthStencilView* GetDepthStencilView() const;
 
 		void Release();
-		bool InitDeviceAndSwapChain(bool fullscreen);
+		bool InitDeviceAndSwapChain();
 		void ReleaseDeviceAndSwapChain();
 		HRESULT CreateDepthStencilBuffer();
 		void SetupViewport() const;

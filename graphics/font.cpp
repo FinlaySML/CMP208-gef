@@ -150,6 +150,8 @@ bool Font::ParseFont( std::istream& Stream, Font::Charset& CharsetDesc )
 				Converter << Value;
 				if( Key == "id" )
 					Converter >> CharID;
+				else if( CharID > 255 )
+					continue;
 				else if( Key == "x" )
 					Converter >> CharsetDesc.Chars[CharID].x;
 				else if( Key == "y" )
@@ -244,4 +246,7 @@ float Font::GetStringLength(const char * text) const
 	return length;
 }
 
+float Font::GetLineHeight() const {
+	return character_set.LineHeight;
+}
 }

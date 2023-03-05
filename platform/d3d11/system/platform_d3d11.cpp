@@ -14,10 +14,9 @@
 #include <platform/d3d11/graphics/depth_buffer_d3d11.h>
 #include <cassert>
 
-
 namespace gef
 {
-	PlatformD3D11::PlatformD3D11(HINSTANCE hinstance, UInt32 width, UInt32 height, bool fullscreen, bool vsync_enabled, HWND hwnd) :
+	PlatformD3D11::PlatformD3D11(HINSTANCE hinstance, UInt32 width, UInt32 height, bool vsync_enabled, HWND hwnd) :
 		window_(NULL),
 		clock_last_frame_(0),
 		device_(NULL),
@@ -41,7 +40,7 @@ namespace gef
 		// create window if window has not already been provided
 		if(hwnd == NULL)
 		{
-			window_ = new WindowWin32(hinstance, width, height, fullscreen, PlatformD3D11::WindowMessageCallback);
+			window_ = new WindowWin32(hinstance, width, height, PlatformD3D11::WindowMessageCallback);
 			set_width(window_->width());
 			set_height(window_->height());
 			hwnd_ = window_->hwnd();
@@ -63,7 +62,7 @@ namespace gef
 		vsync_enabled_ = vsync_enabled;
 
 		bool success = true;
-		success = InitDeviceAndSwapChain(fullscreen);
+		success = InitDeviceAndSwapChain();
 
 		if(success)
 		{
@@ -158,7 +157,7 @@ namespace gef
 		}
 	}
 
-	bool PlatformD3D11::InitDeviceAndSwapChain(bool fullscreen)
+	bool PlatformD3D11::InitDeviceAndSwapChain()
 	{
 		IDXGIFactory* factory = NULL;
 		IDXGIAdapter* adapter = NULL;
@@ -255,7 +254,7 @@ namespace gef
 		sd.OutputWindow = hwnd_;
 		sd.SampleDesc.Count = 1;
 		sd.SampleDesc.Quality = 0;
-		sd.Windowed = fullscreen ? FALSE : TRUE;
+		sd.Windowed = TRUE;
 
 		// Set the feature level to DirectX 11.
 		D3D_FEATURE_LEVEL feature_levels[] =
@@ -408,6 +407,20 @@ namespace gef
 		}
 	}
 
+	void PlatformD3D11::SetFullscreen(bool value)
+	{
+		if(Fullscreen() != value) {
+			swap_chain_->SetFullscreenState(value, NULL);
+		}
+	}
+
+	bool PlatformD3D11::Fullscreen()
+	{
+		BOOL value{FALSE};
+		swap_chain_->GetFullscreenState(&value, NULL);
+		return value == TRUE;
+	}
+
 
 	void PlatformD3D11::PreRender()
 	{
@@ -533,7 +546,7 @@ namespace gef
 		if(that == nullptr) return DefWindowProc(hwnd, umessage, wparam, lparam);
 		that->HandleWindowMessage(hwnd, umessage, wparam, lparam);
 	}
-
+	 
 	ID3D11RenderTargetView* PlatformD3D11::GetRenderTargetView() const
 	{
 		if(render_target())
