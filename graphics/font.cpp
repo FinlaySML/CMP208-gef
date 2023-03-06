@@ -84,9 +84,7 @@ bool Font::Load(const char* font_name)
 
 		std::string font_texture_filename(font_name);
 		font_texture_filename += "_0.png";
-		PNGLoader png_loader;
-		gef::ImageData image_data;
-		png_loader.Load(font_texture_filename.c_str(), platform_, image_data);
+		gef::ImageData image_data{ font_texture_filename.c_str() };
 		font_texture_ = gef::Texture::Create(platform_, image_data);
 		platform_.AddTexture(font_texture_);
 	}
