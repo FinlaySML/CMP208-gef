@@ -47,7 +47,7 @@ namespace gef
 		Matrix44 PerspectiveProjectionFrustum(const float left, const float right, const float top, const float bottom, const float near_distance, const float far_distance) const;
 		Matrix44 OrthographicFrustum(const float left, const float right, const float top, const float bottom, const float near_distance, const float far_distance) const;
 //		void OrthographicFrustumLH(Matrix44& projection_matrix, const float left, const float right, const float top, const float bottom, const float near, const float far);
-		void Clear(const bool clear_render_target, const bool clear_depth_buffer, const bool clear_stencil_buffer) const;
+		void Clear(const bool clear_render_target, const bool clear_depth_buffer, const bool clear_stencil_buffer) const override;
 
 
 		void BeginScene() const;
@@ -56,7 +56,6 @@ namespace gef
 
 		void PreRender();
 		void PostRender();
-		void Clear() const;
 
 		bool Update();
 		float GetFrameTime();

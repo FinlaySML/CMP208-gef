@@ -141,6 +141,7 @@ namespace gef
 
 	void PlatformD3D11::Release()
 	{
+		SetWindowLongPtr(hwnd_, GWLP_USERDATA, (LONG_PTR)nullptr);
 		ReleaseNull(screenshot_texture_);
 		ReleaseNull(depth_stencil_view_);
 		ReleaseNull(depth_stencil_);
@@ -434,11 +435,6 @@ namespace gef
 	{
 		if(swap_chain_)
 			swap_chain_->Present(vsync_enabled_ ? 1 : 0, 0);
-	}
-
-	void PlatformD3D11::Clear() const
-	{
-		Clear(true, true, true);
 	}
 
 	void PlatformD3D11::Clear(const bool clear_render_target_enabled, const bool clear_depth_buffer_enabled, const bool clear_stencil_buffer_enabled ) const
