@@ -36,7 +36,8 @@ namespace gef
 		virtual float GetFrameTime() = 0;
 		virtual void PreRender() = 0;
 		virtual void PostRender() = 0;
-		virtual void Clear() const= 0;
+		virtual void Clear(const bool clear_render_target, const bool clear_depth_buffer, const bool clear_stencil_buffer) const = 0;
+		void Clear() const;
 		//virtual void Release() = 0;
 
 
