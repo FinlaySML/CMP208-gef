@@ -22,7 +22,6 @@ namespace gef
 	public:
 		PlatformD3D11(HINSTANCE hinstance, UInt32 width, UInt32 height, bool vsync_enabled, HWND hwnd = NULL);
 		~PlatformD3D11();
-		LRESULT HandleWindowMessage(HWND hwnd, UINT umessage, WPARAM wparam, LPARAM lparam);
 		void Resize(UInt32 width, UInt32 height);
 		void SetFullscreen(bool value) override;
 		bool Fullscreen() override;
@@ -75,7 +74,8 @@ namespace gef
 		inline IDXGISwapChain* swap_chain() const { return swap_chain_; }
 	private:
 		static LRESULT CALLBACK WindowMessageCallback(HWND hwnd, UINT umessage, WPARAM wparam, LPARAM lparam);
-		
+		LRESULT HandleWindowMessage(HWND hwnd, UINT umessage, WPARAM wparam, LPARAM lparam);
+
 		ID3D11RenderTargetView* GetRenderTargetView() const;
 		ID3D11DepthStencilView* GetDepthStencilView() const;
 
