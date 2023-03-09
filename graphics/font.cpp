@@ -191,10 +191,10 @@ void Font::RenderText(SpriteRenderer* renderer, const class Vector4& pos, const 
 
 	switch(justification)
 	{
-	case TJ_CENTRE:
+	case TextJustification::TJ_CENTRE:
 		cursor.x -= string_length*0.5f*scale;
 		break;
-	case TJ_RIGHT:
+	case TextJustification::TJ_RIGHT:
 		cursor.x -= string_length*scale;
 		break;
 	default:

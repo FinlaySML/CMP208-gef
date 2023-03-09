@@ -12,7 +12,7 @@ namespace gef
 	class Platform;
 	class Vector4;
 
-	enum TextJustification
+	enum class TextJustification
 	{
 		TJ_LEFT = 0,
 		TJ_CENTRE,
