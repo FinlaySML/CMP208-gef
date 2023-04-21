@@ -16,7 +16,7 @@
 
 namespace gef
 {
-	PlatformD3D11::PlatformD3D11(HINSTANCE hinstance, UInt32 width, UInt32 height, bool vsync_enabled, HWND hwnd) :
+	PlatformD3D11::PlatformD3D11(HINSTANCE hinstance, UInt32 width, UInt32 height, bool fullscreen, bool vsync_enabled, HWND hwnd) :
 		window_(NULL),
 		clock_last_frame_(0),
 		device_(NULL),
@@ -97,6 +97,8 @@ namespace gef
 		// create default texture
 		default_texture_ = Texture::CreateCheckerTexture(16, 1, *this);
 		AddTexture(default_texture_);
+
+		SetFullscreen(fullscreen);
 	}
 
 	PlatformD3D11::~PlatformD3D11()
