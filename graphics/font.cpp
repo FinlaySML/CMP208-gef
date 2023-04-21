@@ -134,7 +134,7 @@ bool Font::ParseFont( std::istream& Stream, Font::Charset& CharsetDesc )
 		else if( Read == "char" )
 		{
 			//this is data for a specific char
-			UInt32 CharID = 0;
+			unsigned short CharID = 0;
 
 			while( !LineStream.eof() )
 			{
@@ -148,6 +148,8 @@ bool Font::ParseFont( std::istream& Stream, Font::Charset& CharsetDesc )
 				Converter << Value;
 				if( Key == "id" )
 					Converter >> CharID;
+				else if( CharID > 255 )
+					continue;
 				else if( Key == "x" )
 					Converter >> CharsetDesc.Chars[CharID].x;
 				else if( Key == "y" )
@@ -171,13 +173,19 @@ bool Font::ParseFont( std::istream& Stream, Font::Charset& CharsetDesc )
 	return true;
 }
 
-void Font::RenderText(SpriteRenderer* renderer, const class Vector4& pos, const float scale, const UInt32 colour, const TextJustification justification, std::wstring& string) const
+void Font::RenderText(SpriteRenderer* renderer, const class Vector4& pos, const float scale, const UInt32 colour, const TextJustification justification, const char* text, ...) const
 {
-	if(string.empty())
+	if(!text)
 		return;
 
-	UInt32 character_count = string.size();
-	float string_length = GetStringLength(string);
+	va_list args;
+	char text_buffer[256];
+
+	va_start(args, text);
+	std::vsnprintf(text_buffer, 256, text, args);
+
+	UInt32 character_count = (UInt32)strlen(text_buffer);
+	float string_length = GetStringLength(text_buffer);
 
 	Vector2 cursor = Vector2(pos.x(), pos.y());
 
@@ -195,15 +203,14 @@ void Font::RenderText(SpriteRenderer* renderer, const class Vector4& pos, const 
 
 	Sprite sprite;
 	sprite.set_texture(font_texture_);
-	for (const wchar_t c : string)
+	for (UInt32 character_index = 0; character_index < character_count; ++character_index)
 	{
-		CharDescriptor desc = character_set.Chars.at(static_cast<UInt32>(c));
-		Int32 CharX = desc.x;
-		Int32 CharY = desc.y;
-		Int32 Width = desc.Width;
-		Int32 Height = desc.Height;
-		Int32 OffsetX = desc.XOffset;
-		Int32 OffsetY = desc.YOffset;
+		Int32 CharX = character_set.Chars[static_cast<UInt32>(text_buffer[character_index])].x;
+		Int32 CharY = character_set.Chars[static_cast<UInt32>(text_buffer[character_index])].y;
+		Int32 Width = character_set.Chars[static_cast<UInt32>(text_buffer[character_index])].Width;
+		Int32 Height = character_set.Chars[static_cast<UInt32>(text_buffer[character_index])].Height;
+		Int32 OffsetX = character_set.Chars[static_cast<UInt32>(text_buffer[character_index])].XOffset;
+		Int32 OffsetY = character_set.Chars[static_cast<UInt32>(text_buffer[character_index])].YOffset;
 
 		Vector2 uv_pos((float) CharX / (float) character_set.Width,  ((float) (CharY) / (float) character_set.Height));
 		Vector2 uv_size((float) (Width) / (float) character_set.Width, (float)(Height) / (float) character_set.Height);
@@ -218,16 +225,22 @@ void Font::RenderText(SpriteRenderer* renderer, const class Vector4& pos, const 
 		sprite.set_uv_height(uv_size.y);
 		sprite.set_colour(colour);
 		renderer->DrawSprite(sprite);
-		cursor.x += ((float)desc.XAdvance)*scale;
+		cursor.x += ((float)character_set.Chars[static_cast<UInt32>(text_buffer[character_index])].XAdvance)*scale;
 	}
 }
 
-float Font::GetStringLength(std::wstring& text) const
+float Font::GetStringLength(const char * text) const
 {
 	float length = 0.0f;
-	for(const wchar_t c : text){
-		length += ((float)character_set.Chars.at(static_cast<UInt32>(c)).XAdvance);
+	if(text)
+	{
+		UInt32 string_length = (UInt32)strlen(text);
+
+
+		for( UInt32 character_index = 0; character_index < string_length; ++character_index )
+			length += ((float)character_set.Chars[static_cast<UInt32>(text[character_index])].XAdvance);
 	}
+
 	return length;
 }
 

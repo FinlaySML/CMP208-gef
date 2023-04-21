@@ -3,8 +3,6 @@
 
 #include <gef.h>
 #include <istream>
-#include <unordered_map>
-#include <string>
 
 namespace gef
 {
@@ -27,8 +25,8 @@ namespace gef
 		Font(Platform& platform);
 		~Font();
 		bool Load(const char* font_name);
-		void RenderText(SpriteRenderer* renderer, const Vector4& pos, const float scale, const UInt32 colour, const TextJustification justification, std::wstring&) const;
-		float GetStringLength(std::wstring&) const;
+		void RenderText(SpriteRenderer* renderer, const Vector4& pos, const float scale, const UInt32 colour, const TextJustification justification, const char * text, ...) const;
+		float GetStringLength(const char * text) const;
 		float GetLineHeight() const;
 		inline Texture* font_texture() { return font_texture_; }
 	protected:
@@ -52,7 +50,7 @@ namespace gef
 			UInt16 Base;
 			UInt16 Width, Height;
 			UInt16 Pages;
-			std::unordered_map<UInt32, CharDescriptor> Chars;
+			CharDescriptor Chars[256];
 		};
 
 		bool ParseFont( std::istream& Stream, Font::Charset& CharsetDesc );
