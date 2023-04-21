@@ -20,7 +20,7 @@ namespace gef
 	class PlatformD3D11 : public Platform
 	{
 	public:
-		PlatformD3D11(HINSTANCE hinstance, UInt32 width, UInt32 height, bool vsync_enabled, HWND hwnd = NULL);
+		PlatformD3D11(HINSTANCE hinstance, UInt32 width, UInt32 height, bool fullscreen, bool vsync_enabled, HWND hwnd = NULL);
 		~PlatformD3D11();
 		void Resize(UInt32 width, UInt32 height);
 		void SetFullscreen(bool value) override;
