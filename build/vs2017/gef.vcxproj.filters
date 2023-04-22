@@ -99,7 +99,7 @@
     <ClCompile Include="..\..\graphics\default_3d_shader.cpp">
       <Filter>graphics</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\graphics\default_3d_shader_data.cpp">
+    <ClCompile Include="..\..\graphics\light_data.cpp">
       <Filter>graphics</Filter>
     </ClCompile>
     <ClCompile Include="..\..\graphics\default_sprite_shader.cpp">
@@ -266,7 +266,7 @@
     <ClInclude Include="..\..\graphics\default_3d_shader.h">
       <Filter>graphics</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\graphics\default_3d_shader_data.h">
+    <ClInclude Include="..\..\graphics\light_data.h">
       <Filter>graphics</Filter>
     </ClInclude>
     <ClInclude Include="..\..\graphics\default_sprite_shader.h">

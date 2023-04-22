@@ -10,6 +10,7 @@
 
 #include <graphics/shader.h>
 #include <gef.h>
+#include <graphics/shader_interface.h>
 
 namespace gef
 {
@@ -30,9 +31,9 @@ namespace gef
 		void BuildSpriteShaderData(const Sprite& sprite, Matrix44& sprite_data);
 
 
-		Int32 sprite_data_variable_index_;
-		Int32 projection_matrix_variable_index_;
-		Int32 texture_sampler_index_;
+		gef::ShaderInterface::VVIndex sprite_data_variable_index_;
+		gef::ShaderInterface::VVIndex projection_matrix_variable_index_;
+		gef::ShaderInterface::TSIndex texture_sampler_index_;
 	};
 }
 

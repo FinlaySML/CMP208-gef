@@ -22,9 +22,9 @@ namespace gef
 {
 	DefaultSpriteShader::DefaultSpriteShader(const Platform& platform)
 		:Shader(platform)
-		,sprite_data_variable_index_(-1)
-		,projection_matrix_variable_index_(-1)
-		,texture_sampler_index_(-1)
+		,sprite_data_variable_index_{0}
+		,projection_matrix_variable_index_{ 0 }
+		,texture_sampler_index_{ 0 }
 	{
 		// load vertex shader source in from a file
 		char* vs_shader_source = NULL;
@@ -42,7 +42,6 @@ namespace gef
 		vs_shader_source = NULL;
 		delete[] ps_shader_source;
 		ps_shader_source = NULL;
-
 
 		projection_matrix_variable_index_ = device_interface_->AddVertexShaderVariable("proj_matrix", ShaderInterface::kMatrix44);
 		sprite_data_variable_index_ = device_interface_->AddVertexShaderVariable("sprite_data", ShaderInterface::kMatrix44);
@@ -84,9 +83,9 @@ namespace gef
 	}
 
 	DefaultSpriteShader::DefaultSpriteShader()
-		: sprite_data_variable_index_(-1)
-		, projection_matrix_variable_index_(-1)
-		, texture_sampler_index_(-1)
+		: sprite_data_variable_index_{ 0 }
+		, projection_matrix_variable_index_{ 0 }
+		, texture_sampler_index_{ 0 }
 	{
 
 	}

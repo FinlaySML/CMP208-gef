@@ -3,7 +3,7 @@
 
 #include <gef.h>
 #include <maths/matrix44.h>
-#include <graphics/default_3d_shader_data.h>
+#include <graphics/light_data.h>
 #include <graphics/skinned_mesh_shader_data.h>
 #include <graphics/default_3d_shader.h>
 #include <graphics/default_3d_skinning_shader.h>
@@ -43,7 +43,7 @@ namespace gef
 		virtual void Begin(bool clear = true) = 0;
 		virtual void End() = 0;
 		virtual void DrawMesh(const  MeshInstance& mesh_instance) = 0;
-		virtual void DrawMesh(const Mesh& mesh, const gef::Matrix44& matrix) = 0;
+		virtual void DrawMesh(const Mesh& mesh, const gef::Matrix44& matrix, bool lit=true) = 0;
 
 //		virtual void DrawPrimitive(const  MeshInstance& mesh_instance, Int32 primitive_index, Int32 num_indices = -1) = 0;
 		virtual void SetFillMode(FillMode fill_mode) = 0;
@@ -65,7 +65,7 @@ namespace gef
 		inline const Matrix44& inv_world_transpose_matrix() const { return inv_world_transpose_matrix_; }
 
 		inline  const Platform& platform() const {return platform_;}
-		inline Default3DShaderData& default_shader_data() { return default_shader_data_; }
+		inline LightData& default_shader_data() { return light_data_; }
 		inline void set_override_material(const Material* material) { override_material_ = material; }
 		inline const Material* override_material() const { return override_material_; }
 
@@ -90,8 +90,9 @@ namespace gef
 		Shader* shader_;
 		Default3DShader default_shader_;
 		Default3DSkinningShader default_skinned_mesh_shader_;
-		Default3DShaderData default_shader_data_;
-		SkinnedMeshShaderData default_skinned_mesh_shader_data_;
+		LightData light_data_;
+		LightData full_bright_light_data_;
+		SkinnedMeshShaderData skinned_data_;
 		const Material* override_material_;
 
 		Platform& platform_;

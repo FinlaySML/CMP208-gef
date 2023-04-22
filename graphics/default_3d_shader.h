@@ -12,8 +12,7 @@
 #include <gef.h>
 #include <maths/vector4.h>
 #include <maths/matrix44.h>
-
-#define MAX_NUM_POINT_LIGHTS 4
+#include <graphics/shader_interface.h>
 
 namespace gef
 {
@@ -22,20 +21,11 @@ namespace gef
 	class Primitive;
 	class Texture;
 	class Material;
-	class Default3DShaderData;
+	class LightData;
 
 	class Default3DShader: public Shader
 	{
 	public:
-		struct MeshData
-		{
-			Matrix44 wvp;
-			Matrix44 world;
-			Matrix44 invworld;
-			Vector4 ambient_light_colour;
-			Vector4 light_position[MAX_NUM_POINT_LIGHTS];
-			Vector4 light_colour[MAX_NUM_POINT_LIGHTS];
-		};
 
 		struct PrimitiveData
 		{
@@ -45,9 +35,7 @@ namespace gef
 
 		Default3DShader(const Platform& platform);
 		virtual ~Default3DShader();
-		//void SetSceneData(const Matrix44& wvp_matrix);
-		//void SetSpriteData(const Sprite& sprite, const Texture* texture);
-		void SetSceneData(const Default3DShaderData& shader_data, const Matrix44& view_matrix, const Matrix44& projection_matrix);
+		void SetSceneData(const LightData& shader_data, const Matrix44& view_matrix, const Matrix44& projection_matrix);
 		void SetMeshData(const gef::MeshInstance& mesh_instance);
 		void SetMeshData(const gef::Matrix44& transform);
 		void SetMaterialData(const gef::Material* material);
@@ -56,18 +44,16 @@ namespace gef
 	protected:
 		Default3DShader();
 
-		Int32 wvp_matrix_variable_index_;
-		Int32 world_matrix_variable_index_;
-//		Int32 invworld_matrix_variable_index_;
-		Int32 light_position_variable_index_;
+		gef::ShaderInterface::VVIndex wvp_matrix_variable_index_;
+		gef::ShaderInterface::VVIndex world_matrix_variable_index_;
 
-		Int32 material_colour_variable_index_;
-		Int32 ambient_light_colour_variable_index_;
-		Int32 light_colour_variable_index_;
+		gef::ShaderInterface::PVIndex material_colour_variable_index_;
 
-		Int32 texture_sampler_index_;
+		gef::ShaderInterface::LVIndex ambient_light_colour_variable_index_;
+		gef::ShaderInterface::LVIndex light_data_variable_index_;
 
-		MeshData mesh_data_;
+		gef::ShaderInterface::TSIndex texture_sampler_index_;
+
 		PrimitiveData primitive_data_;
 
 		gef::Matrix44 view_projection_matrix_;

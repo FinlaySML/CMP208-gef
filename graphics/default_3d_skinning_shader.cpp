@@ -14,6 +14,7 @@
 #include <graphics/material.h>
 #include <graphics/colour.h>
 #include <graphics/skinned_mesh_shader_data.h>
+#include <array>
 
 #ifdef _WIN32
 #include <platform/d3d11/graphics/shader_interface_d3d11.h>
@@ -24,15 +25,13 @@ namespace gef
 {
 	Default3DSkinningShader::Default3DSkinningShader(const Platform& platform)
 	:Shader(platform)
-	,wvp_matrix_variable_index_(-1)
-	,world_matrix_variable_index_(-1)
-//	,invworld_matrix_variable_index_(-1)
-	,light_position_variable_index_(-1)
-	,material_colour_variable_index_(-1)
-	,ambient_light_colour_variable_index_(-1)
-	,light_colour_variable_index_(-1)
-	,texture_sampler_index_(-1)
-	,bone_matrices_variable_index_(-1)
+	,wvp_matrix_variable_index_{0}
+	,world_matrix_variable_index_{0}
+	,material_colour_variable_index_{0}
+	,ambient_light_colour_variable_index_{0}
+	,light_data_variable_index_{0}
+	,texture_sampler_index_{0}
+	,bone_matrices_variable_index_{0}
 	{
 		// load vertex shader source in from a file
 		char* vs_shader_source = NULL;
@@ -51,17 +50,17 @@ namespace gef
 		delete[] ps_shader_source;
 		ps_shader_source = NULL;
 
-		wvp_matrix_variable_index_ = device_interface_->AddVertexShaderVariable("wvp", ShaderInterface::kMatrix44);
-		world_matrix_variable_index_ = device_interface_->AddVertexShaderVariable("world", ShaderInterface::kMatrix44);
-//		invworld_matrix_variable_index_ = device_interface_->AddVertexShaderVariable("invworld", ShaderInterface::kMatrix44);
-		light_position_variable_index_ = device_interface_->AddVertexShaderVariable("light_position", ShaderInterface::kVector4, 4);
+		//Vertex Shader Variables
+		wvp_matrix_variable_index_ = device_interface_->AddVertexShaderVariable("wvp", gef::ShaderInterface::kMatrix44);
+		world_matrix_variable_index_ = device_interface_->AddVertexShaderVariable("world", gef::ShaderInterface::kMatrix44);
 		bone_matrices_variable_index_ = device_interface_->AddVertexShaderVariable("bone_matrices", ShaderInterface::kMatrix44, 128);
 
-		// pixel shader variables
-		// TODO - probable need to keep these separate for D3D11
-		material_colour_variable_index_ = device_interface_->AddPixelShaderVariable("material_colour", ShaderInterface::kVector4);
-		ambient_light_colour_variable_index_ = device_interface_->AddPixelShaderVariable("ambient_light_colour", ShaderInterface::kVector4);
-		light_colour_variable_index_ = device_interface_->AddPixelShaderVariable("light_colour", ShaderInterface::kVector4, 4);
+		//Pixel Shader Variables
+		material_colour_variable_index_ = device_interface_->AddPixelShaderVariable("material_colour", gef::ShaderInterface::kVector4);
+
+		//Light Shader Variables
+		ambient_light_colour_variable_index_ = device_interface_->AddLightShaderVariable("ambient_light_colour", gef::ShaderInterface::kVector4);
+		light_data_variable_index_ = device_interface_->AddLightShaderVariable("lights", gef::ShaderInterface::kLightData, MAX_LIGHTS);
 
 		texture_sampler_index_ = device_interface_->AddTextureSampler("texture_sampler");
 
@@ -99,14 +98,12 @@ namespace gef
 	}
 
 	Default3DSkinningShader::Default3DSkinningShader()
-		: wvp_matrix_variable_index_(-1)
-		, world_matrix_variable_index_(-1)
-//		, invworld_matrix_variable_index_(-1)
-		, light_position_variable_index_(-1)
-		, material_colour_variable_index_(-1)
-		, ambient_light_colour_variable_index_(-1)
-		, light_colour_variable_index_(-1)
-		, texture_sampler_index_(-1)
+		: wvp_matrix_variable_index_{0}
+		, world_matrix_variable_index_{0}
+		, material_colour_variable_index_{0}
+		, ambient_light_colour_variable_index_{0}
+		, light_data_variable_index_{0}
+		, texture_sampler_index_{0}
 	{
 	}
 
@@ -114,114 +111,62 @@ namespace gef
 	{
 	}
 
-
-
-	void Default3DSkinningShader::SetSceneData(const SkinnedMeshShaderData& shader_data, const Matrix44& view_matrix, const Matrix44& projection_matrix)
+	void Default3DSkinningShader::SetSceneData(const SkinnedMeshShaderData& shader_data, const LightData& light_data, const Matrix44& view_matrix, const Matrix44& projection_matrix)
 	{
-		//gef::Matrix44 wvp = world_matrix * view_matrix * projection_matrix;
-		gef::Vector4 light_positions[MAX_NUM_POINT_LIGHTS];
-		gef::Vector4 light_colours[MAX_NUM_POINT_LIGHTS];
-		gef::Vector4 ambient_light_colour = shader_data.ambient_light_colour().GetRGBAasVector4();
-
-		for (Int32 light_num = 0; light_num < MAX_NUM_POINT_LIGHTS; ++light_num)
+		gef::Vector4 ambient_light_colour = light_data.AmbientLightColour().GetRGBAasVector4();
+		std::array<gef::LightData::Light, MAX_LIGHTS> shader_lights{};
+		int i = 0;
+		for (auto& light : light_data.GetLights())
 		{
-			Vector4 light_position;
-			Colour light_colour;
-			if (light_num < shader_data.GetNumPointLights())
-			{
-				const PointLight& point_light = shader_data.GetPointLight(light_num);
-				light_position = point_light.position();
-				light_colour = point_light.colour();
-			}
-			else
-			{
-				// no light data
-				// set this light to a light with no colour
-				light_position = Vector4(0.0f, 0.0f, 0.0f);
-				light_colour = Colour(0.0f, 0.0f, 0.0f);
-			}
-			light_positions[light_num] = Vector4(light_position.x(), light_position.y(), light_position.z(), 1.f);
-			light_colours[light_num] = light_colour.GetRGBAasVector4();
+			shader_lights[i] = light.second;
+			i++;
+			if (i == MAX_LIGHTS) break;
 		}
+		//A Radius that is -1 is to determine end of lights in shader
+		if (i < MAX_LIGHTS) shader_lights[i].radius_ = -1.f;
 
 		view_projection_matrix_ = view_matrix * projection_matrix;
 
+		device_interface_->SetLightShaderVariable(ambient_light_colour_variable_index_, (void*)&ambient_light_colour);
+		device_interface_->SetLightShaderVariable(light_data_variable_index_, (void*)shader_lights.data());
 
-		device_interface_->SetVertexShaderVariable(light_position_variable_index_, (float*)light_positions);
-
-		// need to transpose the bone matrices for the shader
-		if (bone_matrices_variable_index_ != -1)
-		{
-			UInt32 matrix_index = 0;
-			for (std::vector<gef::Matrix44>::const_iterator matrix_iter = shader_data.bone_matrices()->begin(); matrix_iter != shader_data.bone_matrices()->end(); ++matrix_iter, ++matrix_index)
-				mesh_data_.bones_matrices[matrix_index].Transpose((*matrix_iter));
-
-			device_interface_->SetVertexShaderVariable(bone_matrices_variable_index_, mesh_data_.bones_matrices[0].float_ptr(), (Int32)shader_data.bone_matrices()->size());
+		UInt32 k = 0;
+		for(const gef::Matrix44& bm : *shader_data.bone_matrices()){
+			bones_matrices[i].Transpose(bm);
+			k++;
 		}
 
-		device_interface_->SetPixelShaderVariable(ambient_light_colour_variable_index_, (float*)&ambient_light_colour);
-		device_interface_->SetPixelShaderVariable(light_colour_variable_index_, (float*)light_colours);
+		device_interface_->SetVertexShaderVariable(bone_matrices_variable_index_, bones_matrices, (Int32)shader_data.bone_matrices()->size());
+		
 	}
 
 	void Default3DSkinningShader::SetMeshData(const gef::MeshInstance& mesh_instance)
 	{
-		// calculate world view projection matrix
-		gef::Matrix44 wvp = mesh_instance.transform() * view_projection_matrix_;
-
-		// calculate the transpose of inverse world matrix to transform normals in shader
-		Matrix44 inv_world;
-		inv_world.Inverse(mesh_instance.transform());
-		//inv_world_transpose_matrix.Transpose(inv_world);
-
-		// take transpose of matrices for the shaders
-		gef::Matrix44 wvpT, worldT;
-
-		wvpT.Transpose(wvp);
-		worldT.Transpose(mesh_instance.transform());
-		// taking the transpose of the inverse world transpose matrix, just give use the inverse world matrix
-		// no need to waste calculating that here
-
-		device_interface_->SetVertexShaderVariable(wvp_matrix_variable_index_, &wvpT);
-		device_interface_->SetVertexShaderVariable(world_matrix_variable_index_, &worldT);
-//		device_interface_->SetVertexShaderVariable(invworld_matrix_variable_index_, &inv_world);
+		SetMeshData(mesh_instance.transform());
 	}
 
 	void Default3DSkinningShader::SetMeshData(const gef::Matrix44& transform)
 	{
-		// calculate world view projection matrix
-		gef::Matrix44 wvp = transform * view_projection_matrix_;
-
-		// calculate the transpose of inverse world matrix to transform normals in shader
-		Matrix44 inv_world;
-		inv_world.Inverse(transform);
-		//inv_world_transpose_matrix.Transpose(inv_world);
-
-		// take transpose of matrices for the shaders
 		gef::Matrix44 wvpT, worldT;
-
-		wvpT.Transpose(wvp);
+		wvpT.Transpose(transform * view_projection_matrix_);
 		worldT.Transpose(transform);
-		// taking the transpose of the inverse world transpose matrix, just give use the inverse world matrix
-		// no need to waste calculating that here
 
 		device_interface_->SetVertexShaderVariable(wvp_matrix_variable_index_, &wvpT);
 		device_interface_->SetVertexShaderVariable(world_matrix_variable_index_, &worldT);
-//		device_interface_->SetVertexShaderVariable(invworld_matrix_variable_index_, &inv_world);
 	}
 
 	void Default3DSkinningShader::SetMaterialData(const gef::Material* material)
 	{
-		Colour material_colour(1.0f, 1.0f, 1.0f, 1.0f);
-		if (material)
-		{
+		if (material) {
 			primitive_data_.material_texture = material->texture();
-			material_colour.SetFromAGBR(material->colour());
+			gef::Colour colour{};
+			colour.SetFromAGBR(material->colour());
+			primitive_data_.material_colour = colour.GetRGBAasVector4();
 		}
-		else
+		else {
 			primitive_data_.material_texture = NULL;
-
-		primitive_data_.material_colour = material_colour.GetRGBAasVector4();
-
+			primitive_data_.material_colour = { 1,1,1,1 };
+		}
 
 		device_interface_->SetPixelShaderVariable(material_colour_variable_index_, (float*)&primitive_data_.material_colour);
 		device_interface_->SetTextureSampler(texture_sampler_index_, primitive_data_.material_texture);

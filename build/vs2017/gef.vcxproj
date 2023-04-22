@@ -183,7 +183,7 @@
     <ClCompile Include="..\..\audio\audio_manager.cpp" />
     <ClCompile Include="..\..\graphics\colour.cpp" />
     <ClCompile Include="..\..\graphics\default_3d_shader.cpp" />
-    <ClCompile Include="..\..\graphics\default_3d_shader_data.cpp" />
+    <ClCompile Include="..\..\graphics\light_data.cpp" />
     <ClCompile Include="..\..\graphics\default_3d_skinning_shader.cpp" />
     <ClCompile Include="..\..\graphics\default_sprite_shader.cpp" />
     <ClCompile Include="..\..\graphics\depth_buffer.cpp" />
@@ -237,7 +237,7 @@
     <ClInclude Include="..\..\audio\audio_manager.h" />
     <ClInclude Include="..\..\graphics\colour.h" />
     <ClInclude Include="..\..\graphics\default_3d_shader.h" />
-    <ClInclude Include="..\..\graphics\default_3d_shader_data.h" />
+    <ClInclude Include="..\..\graphics\light_data.h" />
     <ClInclude Include="..\..\graphics\default_3d_skinning_shader.h" />
     <ClInclude Include="..\..\graphics\default_sprite_shader.h" />
     <ClInclude Include="..\..\graphics\depth_buffer.h" />

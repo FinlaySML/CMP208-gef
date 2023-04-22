@@ -20,7 +20,6 @@ namespace gef
 		Shader();
 		virtual ~Shader();
 		virtual void SetVertexFormat();
-		//virtual void SetData(const void* data);
 		virtual void SetMeshData(const gef::MeshInstance& mesh_instance);
 		virtual void SetMeshData(const gef::Matrix44& transform);
 		virtual void SetMaterialData(const gef::Material* material);

@@ -176,7 +176,7 @@ namespace gef
 	{
 		// set up the shader data for default shader
 		if (shader_ == &default_shader_)
-			default_shader_.SetSceneData(default_shader_data_, view_matrix_, projection_matrix_);
+			default_shader_.SetSceneData(mesh_instance.lit() ? light_data_ : full_bright_light_data_, view_matrix_, projection_matrix_);
 
 		const Mesh* mesh = mesh_instance.mesh();
 		if(mesh != NULL)
@@ -246,11 +246,11 @@ namespace gef
 		}
 	}
 
-	void Renderer3DD3D11::DrawMesh(const Mesh& mesh, const gef::Matrix44& transform)
+	void Renderer3DD3D11::DrawMesh(const Mesh& mesh, const gef::Matrix44& transform, bool lit)
 	{
 		// set up the shader data for default shader
 		if (shader_ == &default_shader_)
-			default_shader_.SetSceneData(default_shader_data_, view_matrix_, projection_matrix_);
+			default_shader_.SetSceneData(lit ? light_data_ : full_bright_light_data_, view_matrix_, projection_matrix_);
 
 		{
 			set_world_matrix(transform);

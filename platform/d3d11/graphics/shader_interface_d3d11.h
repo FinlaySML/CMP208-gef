@@ -30,6 +30,7 @@ namespace gef
 		void SetInputAssemblyElement(const ShaderParameter& shader_parameter, D3D11_INPUT_ELEMENT_DESC& element);
 		void CreateVertexShaderConstantBuffer();
 		void CreatePixelShaderConstantBuffer();
+		void CreateLightShaderConstantBuffer();
 		void CreateSamplerStates();
 
 		DXGI_FORMAT GetVertexAttributeFormat(VariableType type);
@@ -43,6 +44,7 @@ namespace gef
 		Int32 num_elements_;
 		ID3D11Buffer* vs_constant_buffer_;
 		ID3D11Buffer* ps_constant_buffer_;
+		ID3D11Buffer* light_constant_buffer_;
 		std::vector<ID3D11SamplerState*> sampler_states_;
 
 	};

@@ -38,22 +38,11 @@ namespace gef
 		Shader* previous_shader = shader_;
 		if(use_default_shader)
 		{
-			// copy lighting from default shader data
-			// GRC FIXME need to separate light data out
-			// so we don't need to do this
-			default_skinned_mesh_shader_data_.CleanUp();
-
-			for(Int32 light_num=0;light_num<default_shader_data_.GetNumPointLights();++light_num)
-			{
-				default_skinned_mesh_shader_data_.AddPointLight(default_shader_data_.GetPointLight(light_num));
-			}
-			default_skinned_mesh_shader_data_.set_ambient_light_colour(default_shader_data_.ambient_light_colour());
-
-			default_skinned_mesh_shader_data_.set_bone_matrices(&bone_matrices);
+			skinned_data_.set_bone_matrices(&bone_matrices);
 
 			SetShader(&default_skinned_mesh_shader_);
 
-			default_skinned_mesh_shader_.SetSceneData(default_skinned_mesh_shader_data_, view_matrix_, projection_matrix_);
+			default_skinned_mesh_shader_.SetSceneData(skinned_data_, light_data_, view_matrix_, projection_matrix_);
 		}
 
 		DrawMesh(mesh_instance);

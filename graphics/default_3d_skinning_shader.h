@@ -12,9 +12,10 @@
 #include <gef.h>
 #include <maths/vector4.h>
 #include <maths/matrix44.h>
+#include <graphics/light_data.h>
+#include <graphics/shader_interface.h>
 
-#define MAX_NUM_POINT_LIGHTS 4
-#define MAX_NUM_BONE_MATRICES 128
+constexpr int MAX_NUM_BONE_MATRICES = 128;
 
 namespace gef
 {
@@ -28,17 +29,6 @@ namespace gef
 	class Default3DSkinningShader: public Shader
 	{
 	public:
-		struct MeshData
-		{
-			Matrix44 wvp;
-			Matrix44 world;
-//			Matrix44 invworld;
-			Vector4 ambient_light_colour;
-			Vector4 light_position[MAX_NUM_POINT_LIGHTS];
-			Vector4 light_colour[MAX_NUM_POINT_LIGHTS];
-			Matrix44 bones_matrices[MAX_NUM_BONE_MATRICES];
-		};
-
 		struct PrimitiveData
 		{
 			Vector4 material_colour;
@@ -47,9 +37,7 @@ namespace gef
 
 		Default3DSkinningShader(const Platform& platform);
 		virtual ~Default3DSkinningShader();
-		//void SetSceneData(const Matrix44& wvp_matrix);
-		//void SetSpriteData(const Sprite& sprite, const Texture* texture);
-		void SetSceneData(const SkinnedMeshShaderData& shader_data, const Matrix44& view_matrix, const Matrix44& projection_matrix);
+		void SetSceneData(const SkinnedMeshShaderData& shader_data, const LightData& light_data, const Matrix44& view_matrix, const Matrix44& projection_matrix);
 		void SetMeshData(const gef::MeshInstance& mesh_instance);
 		void SetMeshData(const gef::Matrix44& transform);
 		void SetMaterialData(const gef::Material* material);
@@ -58,19 +46,17 @@ namespace gef
 	protected:
 		Default3DSkinningShader();
 
-		Int32 wvp_matrix_variable_index_;
-		Int32 world_matrix_variable_index_;
-//		Int32 invworld_matrix_variable_index_;
-		Int32 light_position_variable_index_;
-		Int32 bone_matrices_variable_index_;
+		gef::ShaderInterface::VVIndex wvp_matrix_variable_index_;
+		gef::ShaderInterface::VVIndex world_matrix_variable_index_;
+		gef::ShaderInterface::VVIndex bone_matrices_variable_index_;
 
-		Int32 material_colour_variable_index_;
-		Int32 ambient_light_colour_variable_index_;
-		Int32 light_colour_variable_index_;
+		gef::ShaderInterface::PVIndex material_colour_variable_index_;
+		gef::ShaderInterface::LVIndex ambient_light_colour_variable_index_;
+		gef::ShaderInterface::LVIndex light_data_variable_index_;
 
-		Int32 texture_sampler_index_;
+		gef::ShaderInterface::TSIndex texture_sampler_index_;
 
-		MeshData mesh_data_;
+		Matrix44 bones_matrices[MAX_NUM_BONE_MATRICES];
 		PrimitiveData primitive_data_;
 
 		gef::Matrix44 view_projection_matrix_;

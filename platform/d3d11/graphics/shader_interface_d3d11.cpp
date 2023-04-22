@@ -3,6 +3,10 @@
 #include <graphics/texture.h>
 #include <platform/d3d11/system/platform_d3d11.h>
 
+constexpr UInt32 PS_DATA_CBUFFER_SLOT = 0;
+constexpr UInt32 VS_DATA_CBUFFER_SLOT = 0;
+constexpr UInt32 LIGHT_DATA_CBUFFER_SLOT = 1;
+
 namespace gef
 {
 	ShaderInterface* ShaderInterface::Create(const Platform& platform)
@@ -21,6 +25,7 @@ namespace gef
 		, num_elements_(0)
 		, vs_constant_buffer_(NULL)
 		, ps_constant_buffer_(NULL)
+		, light_constant_buffer_(NULL)
 	{
 	}
 
@@ -36,6 +41,7 @@ namespace gef
 
 		ReleaseNull(vs_constant_buffer_);
 		ReleaseNull(ps_constant_buffer_);
+		ReleaseNull(light_constant_buffer_);
 	}
 
 	bool ShaderInterfaceD3D11::CreateProgram()
@@ -47,6 +53,7 @@ namespace gef
 //		CreateSamplerStates();
 		CreateVertexShaderConstantBuffer();
 		CreatePixelShaderConstantBuffer();
+		CreateLightShaderConstantBuffer();
 
 		bool success = true;
 		// Compile and create the vertex shader
@@ -154,55 +161,44 @@ namespace gef
 	}
 
 	void ShaderInterfaceD3D11::SetVariableData()
-	{
-		HRESULT hresult = S_OK;
-		D3D11_MAPPED_SUBRESOURCE mappedResource;
-
-
-		void* vs_data = NULL;
-		void* ps_data = NULL;
-
+	{	
 		if (vs_constant_buffer_)
 		{
+			D3D11_MAPPED_SUBRESOURCE mapped;
 			// Lock the constant buffer so it can be written to.
-			hresult = device_context_->Map(vs_constant_buffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-
-			// Get a pointer to the data in the constant buffer.
-			if (SUCCEEDED(hresult))
-				vs_data = mappedResource.pData;
+			if (FAILED(device_context_->Map(vs_constant_buffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) return;
+			// Copy data into buffer
+			memcpy(mapped.pData, vertex_shader_variable_data_, vertex_shader_variable_data_size_);
+			//Unlock buffer
+			device_context_->Unmap(vs_constant_buffer_, 0);
+			//Attach buffer to vertex shader
+			device_context_->VSSetConstantBuffers(VS_DATA_CBUFFER_SLOT, 1, &vs_constant_buffer_);
 		}
 
-		if (SUCCEEDED(hresult))
+		if (ps_constant_buffer_)
 		{
-			if (ps_constant_buffer_)
-			{
-				hresult = device_context_->Map(ps_constant_buffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-				if (SUCCEEDED(hresult))
-					ps_data = mappedResource.pData;
-			}
+			D3D11_MAPPED_SUBRESOURCE mapped;
+			// Lock the constant buffer so it can be written to.
+			if (FAILED(device_context_->Map(ps_constant_buffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) return;
+			// Copy data intp buffer
+			memcpy(mapped.pData, pixel_shader_variable_data_, pixel_shader_variable_data_size_);
+			// Unlock buffer
+			device_context_->Unmap(ps_constant_buffer_, 0);
+			//Attach buffer to pixel shader
+			device_context_->PSSetConstantBuffers(PS_DATA_CBUFFER_SLOT, 1, &ps_constant_buffer_);
 		}
 
-		if (SUCCEEDED(hresult))
-		{
-			if (vs_data)
-				memcpy(vs_data, vertex_shader_variable_data_, vertex_shader_variable_data_size_);
-			if (ps_data)
-				memcpy(ps_data, pixel_shader_variable_data_, pixel_shader_variable_data_size_);
-
-			// Unlock the constant buffer.
-			if (vs_constant_buffer_)
-				device_context_->Unmap(vs_constant_buffer_, 0);
-			if (ps_constant_buffer_)
-				device_context_->Unmap(ps_constant_buffer_, 0);
-
-			// Set the position of the constant buffer in the vertex shader.
-			UInt32 buffer_number = 0;
-
-			// Now set the constant buffer in the shader with the updated values.
-			if (vs_constant_buffer_)
-				device_context_->VSSetConstantBuffers(buffer_number, 1, &vs_constant_buffer_);
-			if (ps_constant_buffer_)
-				device_context_->PSSetConstantBuffers(buffer_number, 1, &ps_constant_buffer_);
+		if (light_constant_buffer_) {
+			D3D11_MAPPED_SUBRESOURCE mapped;
+			// Lock the constant buffer so it can be written to.
+			if (FAILED(device_context_->Map(light_constant_buffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) return;
+			// Copy data into buffer
+			memcpy(mapped.pData, light_shader_variable_data_, light_shader_variable_data_size_);
+			//Unlock buffer
+			device_context_->Unmap(light_constant_buffer_, 0);
+			//Attach buffer to shaders
+			device_context_->VSSetConstantBuffers(LIGHT_DATA_CBUFFER_SLOT, 1, &light_constant_buffer_);
+			device_context_->PSSetConstantBuffers(LIGHT_DATA_CBUFFER_SLOT, 1, &light_constant_buffer_);
 		}
 	}
 
@@ -320,6 +316,25 @@ namespace gef
 		}
 	}
 
+	void ShaderInterfaceD3D11::CreateLightShaderConstantBuffer()
+	{
+		if (light_shader_variable_data_size_ > 0)
+		{
+			// Setup the description of the dynamic constant buffer that is in the vertex shader.
+			D3D11_BUFFER_DESC constant_buffer_desc;
+			constant_buffer_desc.Usage = D3D11_USAGE_DYNAMIC;
+			constant_buffer_desc.ByteWidth = light_shader_variable_data_size_;
+			constant_buffer_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+			constant_buffer_desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+			constant_buffer_desc.MiscFlags = 0;
+			constant_buffer_desc.StructureByteStride = 0;
+
+			// Create the constant buffer pointer so we can access the vertex shader constant buffer from within this class.
+			HRESULT hresult = S_OK;
+			hresult = device_->CreateBuffer(&constant_buffer_desc, NULL, &this->light_constant_buffer_);
+		}
+	}
+
 	void ShaderInterfaceD3D11::CreateSamplerStates()
 	{
 		for (auto texture_sampler = texture_samplers_.begin(); texture_sampler != texture_samplers_.end(); ++texture_sampler)
@@ -328,13 +343,9 @@ namespace gef
 
 			// Create a texture sampler state description.
 			sampler_desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-//			sampler_desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 			sampler_desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 			sampler_desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
 			sampler_desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-			//sampler_desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-			//sampler_desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-			//sampler_desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
 			sampler_desc.MipLODBias = 0.0f;
 			sampler_desc.MaxAnisotropy = 1;
 			sampler_desc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;

@@ -33,10 +33,13 @@ namespace gef
 		/// @brief Set the mesh
 		/// @param[in] mesh		The mesh that visually represents this object
 		void set_mesh(const Mesh* mesh) { mesh_ = mesh; }
+
+		bool lit() const { return lit_; }
+		void set_lit(bool lit) {lit_ = lit;}
 	protected:
 		/// The transformation matrix.
 		Matrix44 transform_;
-
+		bool lit_;
 		/// The mesh
 		const Mesh* mesh_;
 	};

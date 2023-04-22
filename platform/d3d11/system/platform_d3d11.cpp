@@ -227,7 +227,7 @@ namespace gef
 
 		UINT create_device_flags = 0;
 	#ifdef _DEBUG
-		//create_device_flags |= D3D11_CREATE_DEVICE_DEBUG;
+		create_device_flags |= D3D11_CREATE_DEVICE_DEBUG;
 	#endif
 
 		D3D_DRIVER_TYPE driver_types[] =

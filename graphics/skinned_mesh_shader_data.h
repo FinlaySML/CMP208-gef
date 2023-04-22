@@ -1,11 +1,12 @@
 #ifndef _GEF_SKINNED_MESH_SHADER_DATA_H
 #define _GEF_SKINNED_MESH_SHADER_DATA_H
 
-#include <graphics/default_3d_shader_data.h>
+#include <maths/matrix44.h>
+#include <vector>
 
 namespace gef
 {
-	class SkinnedMeshShaderData : public Default3DShaderData
+	class SkinnedMeshShaderData
 	{
 	public:
 		SkinnedMeshShaderData();
