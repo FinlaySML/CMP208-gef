@@ -6,7 +6,7 @@
 #include <graphics/point_light.h>
 #include <unordered_map>
 
-constexpr int MAX_LIGHTS = 64;
+constexpr int MAX_LIGHTS = 512;
 
 namespace gef
 {
