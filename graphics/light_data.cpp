@@ -17,7 +17,7 @@ namespace gef
 	{
 	}
 	
-	LightData::LightData() : ambient_light_colour_{1.0,1.0,1.0}, next_light_id_{0}
+	LightData::LightData() : ambient_light_colour_{1.0,1.0,1.0}, next_light_id_{1}
 	{
 	}
 	UInt64 LightData::AddLight(const Light& point_light)
