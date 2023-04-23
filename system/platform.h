@@ -84,8 +84,8 @@ namespace gef
 
 		virtual void BeginScene() const = 0;
 		virtual void EndScene() const = 0;
-		virtual const char* GetShaderDirectory() const = 0;
-		virtual const char* GetShaderFileExtension() const = 0;
+		virtual std::wstring GetShaderDirectory() const = 0;
+		virtual std::wstring GetShaderFileExtension() const = 0;
 
 		// check to see if the platform device is ready to render
 		// this may be false if application focus has been lost.

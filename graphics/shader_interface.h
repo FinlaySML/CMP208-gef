@@ -65,10 +65,10 @@ namespace gef
 
 		virtual ~ShaderInterface();
 
-		void SetVertexShaderSource(const char* vs_shader_source, Int32 vs_shader_source_size);
-		void SetPixelShaderSource(const char* ps_shader_source, Int32 ps_shader_source_size);
+		void SetVertexShaderPath(const std::wstring& filename, const std::wstring& base_path, const Platform& platform);
+		void SetPixelShaderPath(const std::wstring& filename, const std::wstring& base_path, const Platform& platform);
 
-		virtual bool CreateProgram() = 0;
+		virtual void CreateProgram() = 0;
 		virtual void CreateVertexFormat() = 0;
 
 		void AddVertexParameter(const char* parameter_name, VariableType variable_type, Int32 byte_offset, const char* semantic_name, int semantic_index);
@@ -106,10 +106,8 @@ namespace gef
 		void AllocateVariableData();
 		UInt8* AllocateVariableData(std::vector<ShaderVariable>& variables, Int32& variable_data_size);
 
-		char* vs_shader_source_;
-		Int32 vs_shader_source_size_;
-		char* ps_shader_source_;
-		Int32 ps_shader_source_size_;
+		std::wstring vs_path;
+		std::wstring ps_path;
 
 		std::vector<ShaderParameter> parameters_;
 		std::vector<ShaderVariable> vertex_shader_variables_;

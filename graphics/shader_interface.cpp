@@ -10,6 +10,7 @@
 #include <cstring>
 #include <assert.h>
 #include <graphics/light_data.h>
+#include <system/platform.h>
 
 namespace gef
 {
@@ -20,11 +21,7 @@ namespace gef
 			pixel_shader_variable_data_size_(0),
 			light_shader_variable_data_(NULL),
 			light_shader_variable_data_size_(0),
-			vertex_size_(0),
-			vs_shader_source_(NULL),
-			vs_shader_source_size_(0),
-			ps_shader_source_(NULL),
-			ps_shader_source_size_(0)
+			vertex_size_(0)
 	{
 	}
 	ShaderInterface::~ShaderInterface()
@@ -32,8 +29,6 @@ namespace gef
 		free(vertex_shader_variable_data_);
 		free(pixel_shader_variable_data_);
 		free(light_shader_variable_data_);
-		free(vs_shader_source_);
-		free(ps_shader_source_);
 	}
 	ShaderInterface::VVIndex ShaderInterface::AddVertexShaderVariable(const char* variable_name, VariableType variable_type, Int32 variable_count)
 	{
@@ -174,17 +169,13 @@ namespace gef
 		return static_cast<UInt8*>(malloc(variable_data_size));
 	}
 
-	void ShaderInterface::SetVertexShaderSource(const char* vs_shader_source, Int32 vs_shader_source_size)
+	void ShaderInterface::SetVertexShaderPath(const std::wstring& filename, const std::wstring& base_path, const Platform& platform)
 	{
-		vs_shader_source_size_ = vs_shader_source_size;
-		vs_shader_source_ = new char[vs_shader_source_size];
-		memcpy((void*)vs_shader_source_, vs_shader_source, vs_shader_source_size_);
+		vs_path = base_path + L"/" + platform.GetShaderDirectory() + L"/" + filename + L"." + platform.GetShaderFileExtension();
 	}
 
-	void ShaderInterface::SetPixelShaderSource(const char* ps_shader_source, Int32 ps_shader_source_size)
+	void ShaderInterface::SetPixelShaderPath(const std::wstring& filename, const std::wstring& base_path, const Platform& platform)
 	{
-		ps_shader_source_size_ = ps_shader_source_size;
-		ps_shader_source_ = new char[ps_shader_source_size];
-		memcpy((void*)ps_shader_source_, ps_shader_source, ps_shader_source_size_);
+		ps_path = base_path + L"/" + platform.GetShaderDirectory() + L"/" + filename + L"." + platform.GetShaderFileExtension();
 	}
 }

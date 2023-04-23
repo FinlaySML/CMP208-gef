@@ -2,6 +2,7 @@
 #include <d3dcompiler.h>
 #include <graphics/texture.h>
 #include <platform/d3d11/system/platform_d3d11.h>
+#include <atlbase.h>
 
 constexpr UInt32 PS_DATA_CBUFFER_SLOT = 0;
 constexpr UInt32 VS_DATA_CBUFFER_SLOT = 0;
@@ -44,103 +45,53 @@ namespace gef
 		ReleaseNull(light_constant_buffer_);
 	}
 
-	bool ShaderInterfaceD3D11::CreateProgram()
+	//From https://learn.microsoft.com/en-us/windows/win32/direct3d11/how-to--compile-a-shader
+	HRESULT CompileShader(_In_ LPCWSTR srcFile, _In_ LPCSTR entryPoint, _In_ LPCSTR profile, _Outptr_ ID3DBlob** blob)
 	{
-		//
-		// allocate memory to store local copy of variable data
-		//
+		if (!srcFile || !entryPoint || !profile || !blob)
+			return E_INVALIDARG;
+
+		*blob = nullptr;
+
+		UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
+#if defined( DEBUG ) || defined( _DEBUG )
+		flags |= D3DCOMPILE_DEBUG;
+#endif
+		
+		CComPtr<ID3DBlob> shaderBlob = nullptr;
+		CComPtr<ID3DBlob> errorBlob = nullptr;
+		HRESULT hr = D3DCompileFromFile(srcFile, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, entryPoint, profile, flags, 0, &shaderBlob, &errorBlob);
+		if (FAILED(hr))
+		{
+			if (errorBlob)
+			{
+				OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+			}
+			return hr;
+		}
+
+		*blob = shaderBlob.Detach();
+
+		return hr;
+	}
+
+	void ShaderInterfaceD3D11::CreateProgram()
+	{
 		AllocateVariableData();
-//		CreateSamplerStates();
 		CreateVertexShaderConstantBuffer();
 		CreatePixelShaderConstantBuffer();
 		CreateLightShaderConstantBuffer();
 
-		bool success = true;
-		// Compile and create the vertex shader
-		if (vs_shader_source_size_ > 0)
-		{
-
-
-			DWORD shader_flags = D3DCOMPILE_ENABLE_STRICTNESS;
-#ifdef _DEBUG
-			shader_flags |= D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#endif
-			ID3D10Blob* vs_blob = NULL;
-			ID3D10Blob* error_blob = NULL;
-			HRESULT hresult = S_OK;
-			hresult = D3DCompile(vs_shader_source_, vs_shader_source_size_, /*vertex_shader_source_name*/ NULL, NULL, NULL, "VS",
-				"vs_4_0", shader_flags, 0, &vs_blob, &error_blob);
-			if (FAILED(hresult))
-			{
-				if (error_blob != NULL)
-				{
-					OutputDebugStringA((CHAR*)error_blob->GetBufferPointer());
-					error_blob->Release();
-				}
-			}
-			else
-			{
-				hresult = device_->CreateVertexShader(vs_blob->GetBufferPointer(), vs_blob->GetBufferSize(),
-					NULL, &vertex_shader_);
-			}
-
-
-			// create the vertex input layout
-			if (SUCCEEDED(hresult))
-			{
-				hresult = device_->CreateInputLayout(elements_, num_elements_, vs_blob->GetBufferPointer(),
-					vs_blob->GetBufferSize(), &vertex_input_layout_);
-			}
-
-
-			if (FAILED(hresult))
-			{
-				success = false;
-				ReleaseNull(vertex_shader_);
-			}
-			ReleaseNull(error_blob);
-			ReleaseNull(vs_blob);
-		}
-
-
-		// Compile and create the pixel shader
-		if (success && (ps_shader_source_size_ > 0))
-		{
-			DWORD shader_flags = D3DCOMPILE_ENABLE_STRICTNESS;
-#ifdef _DEBUG
-			shader_flags |= D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#endif
-			ID3D10Blob* ps_blob = NULL;
-			ID3D10Blob* error_blob = NULL;
-			HRESULT hresult = S_OK;
-			hresult = D3DCompile(ps_shader_source_, ps_shader_source_size_, /*pixel_shader_source_name*/NULL, NULL, NULL, "PS",
-				"ps_4_0", shader_flags, 0, &ps_blob, &error_blob);
-			if (FAILED(hresult))
-			{
-				if (error_blob != NULL)
-				{
-					OutputDebugStringA((CHAR*)error_blob->GetBufferPointer());
-					error_blob->Release();
-				}
-			}
-			else
-			{
-				hresult = device_->CreatePixelShader(ps_blob->GetBufferPointer(), ps_blob->GetBufferSize(),
-					NULL, &pixel_shader_);
-			}
-
-			if (FAILED(hresult))
-			{
-				success = false;
-				ReleaseNull(vertex_shader_);
-				ReleaseNull(vertex_input_layout_);
-				ReleaseNull(pixel_shader_);
-			}
-			ReleaseNull(error_blob);
-			ReleaseNull(ps_blob);
-		}
-
-		return success;
+		// Compile vertex shader shader
+		CComPtr<ID3DBlob> vsBlob = nullptr;
+		gef::ThrowIfFailed(CompileShader(vs_path.c_str(), "VS", "vs_4_0", &vsBlob));
+		gef::ThrowIfFailed(device_->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), NULL, &vertex_shader_));
+		gef::ThrowIfFailed(device_->CreateInputLayout(elements_, num_elements_, vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &vertex_input_layout_));
+		
+		// Compile vertex shader shader
+		CComPtr<ID3DBlob> psBlob = nullptr;
+		gef::ThrowIfFailed(CompileShader(ps_path.c_str(), "PS", "ps_4_0", &psBlob));
+		gef::ThrowIfFailed(device_->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), NULL, &pixel_shader_));
 	}
 
 	void ShaderInterfaceD3D11::CreateVertexFormat()
@@ -155,7 +106,6 @@ namespace gef
 
 	void ShaderInterfaceD3D11::UseProgram()
 	{
-
 		device_context_->VSSetShader(this->vertex_shader_, NULL, 0);
 		device_context_->PSSetShader(this->pixel_shader_, NULL, 0);
 	}

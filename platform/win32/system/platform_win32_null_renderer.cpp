@@ -80,13 +80,13 @@ namespace gef
 	}
 
 
-	const char* PlatformWin32NullRenderer::GetShaderDirectory() const
+	std::wstring PlatformWin32NullRenderer::GetShaderDirectory() const
 	{
-		return NULL;
+		return L"";
 	}
-	const char* PlatformWin32NullRenderer::GetShaderFileExtension() const
+	std::wstring PlatformWin32NullRenderer::GetShaderFileExtension() const
 	{
-		return NULL;
+		return L"";
 	}
 
 	class SpriteRenderer* PlatformWin32NullRenderer::CreateSpriteRenderer()

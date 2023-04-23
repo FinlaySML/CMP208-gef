@@ -26,7 +26,6 @@ namespace gef
 
 		inline ShaderInterface* device_interface() { return device_interface_; }
 	protected:
-		bool LoadShader(const char* filename, const char* base_filepath, char** shader_source, Int32& shader_source_length, const Platform& platform);
 		ShaderInterface* device_interface_;
 	};
 }

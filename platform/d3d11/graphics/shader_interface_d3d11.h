@@ -12,7 +12,7 @@ namespace gef
 		ShaderInterfaceD3D11(ID3D11Device* device, ID3D11DeviceContext* device_context);
 		~ShaderInterfaceD3D11();
 
-		bool CreateProgram();
+		void CreateProgram();
 		void CreateVertexFormat();
 
 		void UseProgram();

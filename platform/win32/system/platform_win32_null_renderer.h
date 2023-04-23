@@ -48,8 +48,8 @@ namespace gef
 
 		void BeginScene() const;
 		void EndScene() const;
-		const char* GetShaderDirectory() const;
-		const char* GetShaderFileExtension() const;
+		std::wstring GetShaderDirectory() const;
+		std::wstring GetShaderFileExtension() const;
 
 
 

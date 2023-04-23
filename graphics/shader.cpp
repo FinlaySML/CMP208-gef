@@ -50,27 +50,4 @@ namespace gef
 	{
 
 	}
-
-
-	bool Shader::LoadShader(const char* filename, const char* base_filepath, char** shader_source, Int32& shader_source_length, const Platform& platform)
-	{
-		File* vs_file = gef::File::Create();
-		void* buffer = NULL;
-		Int32 buffer_size = 0;
-
-		std::string full_filepath = std::string(base_filepath) + "/"+ std::string(platform.GetShaderDirectory()) + "/" + std::string(filename) + "." + std::string(platform.GetShaderFileExtension());
-
-		bool success = vs_file->Load(full_filepath.c_str(), &buffer, buffer_size);
-		if(!success)
-		{
-			DebugOut("LoadShader: %s failed to load\n", filename);
-			exit(-1);
-		}
-
-		shader_source_length = buffer_size;
-		*shader_source = new char[shader_source_length];
-		memcpy(*shader_source, buffer, shader_source_length);
-
-		return success;
-	}
 }

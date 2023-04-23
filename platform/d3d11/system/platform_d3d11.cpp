@@ -572,14 +572,14 @@ namespace gef
 	}
 
 
-	const char* PlatformD3D11::GetShaderDirectory() const
+	std::wstring PlatformD3D11::GetShaderDirectory() const
 	{
-		return "d3d11";
+		return L"d3d11";
 	}
 
-	const char* PlatformD3D11::GetShaderFileExtension() const
+	std::wstring PlatformD3D11::GetShaderFileExtension() const
 	{
-		return "hlsl";
+		return L"hlsl";
 	}
 
 

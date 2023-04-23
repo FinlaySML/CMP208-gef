@@ -26,22 +26,9 @@ namespace gef
 		,projection_matrix_variable_index_{ 0 }
 		,texture_sampler_index_{ 0 }
 	{
-		// load vertex shader source in from a file
-		char* vs_shader_source = NULL;
-		Int32 vs_shader_source_length = 0;
-		LoadShader("default_sprite_shader_vs", "shaders/gef", &vs_shader_source, vs_shader_source_length, platform);
-
-		char* ps_shader_source = NULL;
-		Int32 ps_shader_source_length = 0;
-		LoadShader("default_sprite_shader_ps", "shaders/gef", &ps_shader_source, ps_shader_source_length, platform);
-
-		device_interface_->SetVertexShaderSource(vs_shader_source, vs_shader_source_length);
-		device_interface_->SetPixelShaderSource(ps_shader_source, ps_shader_source_length);
-
-		delete[] vs_shader_source;
-		vs_shader_source = NULL;
-		delete[] ps_shader_source;
-		ps_shader_source = NULL;
+		// Compile shaders
+		device_interface_->SetVertexShaderPath(L"default_sprite_shader_vs", L"shaders/gef", platform);
+		device_interface_->SetPixelShaderPath(L"default_sprite_shader_ps", L"shaders/gef", platform);
 
 		projection_matrix_variable_index_ = device_interface_->AddVertexShaderVariable("proj_matrix", ShaderInterface::kMatrix44);
 		sprite_data_variable_index_ = device_interface_->AddVertexShaderVariable("sprite_data", ShaderInterface::kMatrix44);
