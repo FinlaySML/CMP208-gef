@@ -9,11 +9,10 @@ namespace gef
 	}
 
 	AudioManagerD3D11::AudioManagerD3D11() :
+	music(NULL),
 	musicFile(NULL),
 	musicBuffer(NULL)
 	{
-		// Nothing to setup
-		music.setLoop(true);
 	}
 
 	AudioManagerD3D11::~AudioManagerD3D11(void)
@@ -70,7 +69,7 @@ namespace gef
 	Int32 AudioManagerD3D11::LoadMusic(const char * strFileName, const Platform & platform)
 	{
 		// If the music already has been loaded, unload it so it can be replaced
-		if (musicFile && musicBuffer)
+		if (musicFile && musicBuffer && music)
 			UnloadMusic();
 
 		// Create a file and open the target music file
@@ -87,7 +86,9 @@ namespace gef
 				if (musicFile->Read(musicBuffer, fileSize, bytesRead)) 
 				{
 					// Pass data buffer to the music object so it can play
-					if (music.openFromMemory(musicBuffer, bytesRead)) {
+					music = new sf::Music();
+					if (music->openFromMemory(musicBuffer, bytesRead)) {
+						music->setLoop(true);
 						return 0;
 					}
 				}
@@ -102,7 +103,7 @@ namespace gef
 	Int32 AudioManagerD3D11::PlayMusic()
 	{
 		// Play the music...
-		music.play();
+		if (music) music->play();
 
 		return 0;
 	}
@@ -110,7 +111,7 @@ namespace gef
 	Int32 AudioManagerD3D11::StopMusic()
 	{
 		// Stop the music...
-		music.stop();
+		if(music) music->stop();
 
 		return 0;
 	}
@@ -150,8 +151,9 @@ namespace gef
 
 	void AudioManagerD3D11::UnloadMusic()
 	{
-		// Stop the music
-		music.stop();
+		// Delete the music
+		delete music;
+		music = NULL;
 
 		// Close and delete the music file
 		if (musicFile) {
@@ -227,7 +229,7 @@ namespace gef
 	Int32 AudioManagerD3D11::SetMusicPitch(float pitch)
 	{
 		// Set music pitch...
-		music.setPitch(pitch);
+		if(music) music->setPitch(pitch);
 
 		return 0;
 	}
@@ -267,7 +269,7 @@ namespace gef
 	Int32 AudioManagerD3D11::GetMusicVolumeInfo(VolumeInfo & volume_info)
 	{
 		// Assign volume data to argument
-		volume_info.volume = music.getVolume();
+		volume_info.volume = music ? music->getVolume() : 0.f;
 		volume_info.pan = 0.f;
 
 		return 0;
@@ -276,7 +278,7 @@ namespace gef
 	Int32 AudioManagerD3D11::SetMusicVolumeInfo(const VolumeInfo & volume_info)
 	{
 		// Set music volume
-		music.setVolume(volume_info.volume);
+		if (music) music->setVolume(volume_info.volume);
 
 		return 0;
 	}
@@ -333,12 +335,12 @@ namespace gef
 	void AudioManagerD3D11::SetMusicLoop(bool looping)
 	{
 		// Set music object to loop
-		music.setLoop(looping);
+		if(music) music->setLoop(looping);
 	}
 
 	bool AudioManagerD3D11::GetMusicLoop()
 	{
 		// Get value of music loop flag
-		return music.getLoop();
+		return music->getLoop();
 	}
 }

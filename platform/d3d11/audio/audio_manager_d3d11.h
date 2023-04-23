@@ -26,7 +26,6 @@ public:
 	void UnloadSample(Int32 sample_num);
 	void UnloadAllSamples();
 
-
 	Int32 WriteAudioOut( const short *pBuffer );
 	Int32 SetSamplePitch(const Int32 voice_index, float pitch);
 	Int32 SetMusicPitch(float pitch);
@@ -48,7 +47,7 @@ private:
 	std::vector<UInt8*> rawSampleData_;
 	std::vector<sf::SoundBuffer*> sampleBuffers_;
 	std::vector<sf::Sound*> samples_;
-	sf::Music music;
+	sf::Music* music;
 	UInt8* musicBuffer;
 	File* musicFile;
 };
