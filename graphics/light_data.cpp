@@ -50,4 +50,8 @@ namespace gef
 	{
 		ambient_light_colour_ = colour;
 	}
+	void LightData::ClearLights() {
+		next_light_id_ = 1;
+		lights_.clear();
+	}
 }

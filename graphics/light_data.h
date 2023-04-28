@@ -35,6 +35,7 @@ namespace gef
 		const std::unordered_map<UInt64, Light>& GetLights() const;
 		const Colour& AmbientLightColour() const;
 		void SetAmbientLightColour(const Colour& colour);
+		void ClearLights();
 	private:
 		Colour ambient_light_colour_;
 		std::unordered_map<UInt64, Light> lights_;
