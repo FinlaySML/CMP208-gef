@@ -14,13 +14,13 @@ namespace gef
 	class PlayingSoundD3D11 : public PlayingSound {
 	public:
 		std::unique_ptr<sf::SoundSource> sound_;
-		bool delete_automatically_;
+		bool delete_when_finished_;
 		bool is_music_;
 		bool should_delete;
-		PlayingSoundD3D11(std::unique_ptr<sf::SoundSource> sound, bool delete_automatically, bool is_music_);
+		PlayingSoundD3D11(std::unique_ptr<sf::SoundSource> sound, bool delete_when_finished, bool is_music_);
 		void Remove();
-		bool GetDeleteAutomatically() const override;
-		void SetDeleteAutomatically(bool) override;
+		bool GetDeleteWhenFinished() const override;
+		void SetDeleteWhenFinished(bool) override;
 		bool GetLooping() const override;
 		void SetLooping(bool) override;
 		bool GetPlaying() const override;
@@ -29,6 +29,12 @@ namespace gef
 		void SetPitch(float) override;
 		float GetVolume() const override;
 		void SetVolume(float) override;
+		gef::Vector4 GetPosition() const override;
+		void SetPosition(gef::Vector4) override;
+		float GetAttenuation() const override;
+		void SetAttenuation(float) override;
+		float GetMinDistance() const override;
+		void SetMinDistance(float) override;
 	};
 
 
@@ -38,12 +44,13 @@ public:
 	AudioManagerD3D11();
 
 	SoundBufferID LoadSample(const std::string& file, const Platform& platform) override;
-	PlayingSoundID CreateSound(const SoundBufferID sound_buffer_index, const bool delete_automatically, const bool looping) override;
+	PlayingSoundID CreateSound(const SoundBufferID sound_buffer_index, const bool delete_when_finished) override;
 	bool LoadMusic(const std::string& file, const Platform& platform) override;
 	PlayingSound* GetSound(const PlayingSoundID key) override;
 	PlayingSound* GetMusic() override;
 	void SetMasterVolume(float volume) override;
-	void Update();
+	void Update() override;
+	void UpdateSpatialAudio(gef::Vector4 position, gef::Vector4 direction, gef::Vector4 up) override;
 
 private:
 	std::vector<std::unique_ptr<sf::SoundBuffer>> sampleBuffers_;

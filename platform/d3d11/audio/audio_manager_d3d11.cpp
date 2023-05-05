@@ -9,7 +9,7 @@ namespace gef
 
 	PlayingSoundD3D11::PlayingSoundD3D11(std::unique_ptr<sf::SoundSource> sound, bool del_auto, bool is_music) : 
 		sound_{ std::move(sound) }, 
-		delete_automatically_{ del_auto }, 
+		delete_when_finished_{ del_auto }, 
 		is_music_{is_music},
 		should_delete{false}
 	{
@@ -20,12 +20,12 @@ namespace gef
 		should_delete = true;
 	}
 
-	bool PlayingSoundD3D11::GetDeleteAutomatically() const {
-		return delete_automatically_;
+	bool PlayingSoundD3D11::GetDeleteWhenFinished() const {
+		return delete_when_finished_;
 	}
 
-	void PlayingSoundD3D11::SetDeleteAutomatically(bool val) {
-		delete_automatically_ = val;
+	void PlayingSoundD3D11::SetDeleteWhenFinished(bool val) {
+		delete_when_finished_ = val;
 	}
 
 	bool PlayingSoundD3D11::GetLooping() const {
@@ -61,6 +61,38 @@ namespace gef
 
 	void PlayingSoundD3D11::SetVolume(float val) {
 		sound_->setVolume(val);
+	}
+
+	gef::Vector4 PlayingSoundD3D11::GetPosition() const
+	{
+		sf::Vector3f pos = sound_->getPosition();
+		return gef::Vector4{pos.x,pos.y,pos.z};
+	}
+
+	void PlayingSoundD3D11::SetPosition(gef::Vector4 p)
+	{
+		sf::Vector3f pos{p.x(),p.y(),p.z()};
+		sound_->setPosition(pos);
+	}
+
+	float PlayingSoundD3D11::GetAttenuation() const
+	{
+		return sound_->getAttenuation();
+	}
+
+	void PlayingSoundD3D11::SetAttenuation(float val)
+	{
+		sound_->setAttenuation(val);
+	}
+
+	float PlayingSoundD3D11::GetMinDistance() const
+	{
+		return sound_->getMinDistance();
+	}
+
+	void PlayingSoundD3D11::SetMinDistance(float val)
+	{
+		sound_->setMinDistance(val);
 	}
 	
 	AudioManagerD3D11::AudioManagerD3D11() :
@@ -126,6 +158,7 @@ namespace gef
 					std::unique_ptr<sf::Music> m{ new sf::Music() };
 					if (m->openFromMemory(musicBuffer.data(), bytesRead)) {
 						m->setLoop(true);
+						m->setAttenuation(0);
 						music.reset(new PlayingSoundD3D11(std::move(m), false, true));
 						return true;
 					}
@@ -138,15 +171,16 @@ namespace gef
 		return false;
 	}
 
-	PlayingSoundID AudioManagerD3D11::CreateSound(const SoundBufferID sound_buffer_index, const bool delete_automatically, const bool looping )
+	PlayingSoundID AudioManagerD3D11::CreateSound(const SoundBufferID sound_buffer_index, const bool delete_when_finished)
 	{
 		if (sound_buffer_index.val_ == -1) return {(size_t)-1};
 		sf::Sound* s = new sf::Sound();
 		s->setBuffer(*sampleBuffers_.at(sound_buffer_index.val_).get());
-		s->setLoop(looping);
+		s->setAttenuation(0);
+		s->setRelativeToListener(false);
 		s->play();
 		size_t key = ++sample_key_counter;
-		samples_.insert({ key, std::unique_ptr<PlayingSoundD3D11>(new PlayingSoundD3D11(std::unique_ptr<sf::SoundSource>(s), delete_automatically, false)) });
+		samples_.insert({ key, std::unique_ptr<PlayingSoundD3D11>(new PlayingSoundD3D11(std::unique_ptr<sf::SoundSource>(s), delete_when_finished, false)) });
 		return { key };
 	}
 
@@ -169,7 +203,7 @@ namespace gef
 	void AudioManagerD3D11::Update() {
 		auto pred = [&](std::unique_ptr<PlayingSoundD3D11>& sound) {
 			if (sound->should_delete) return true;
-			if (sound->delete_automatically_ && !sound->GetPlaying()) return true;
+			if (sound->delete_when_finished_ && !sound->GetPlaying()) return true;
 			return false;
 		};
 		for (auto i = samples_.begin(), last = samples_.end(); i != last; ) {
@@ -180,5 +214,11 @@ namespace gef
 				++i;
 			}
 		}
+	}
+	void AudioManagerD3D11::UpdateSpatialAudio(gef::Vector4 position, gef::Vector4 direction, gef::Vector4 up)
+	{
+		sf::Listener::setPosition({ position.x(),position.y(),position.z() });
+		sf::Listener::setDirection({ direction.x(),direction.y(),direction.z() });
+		sf::Listener::setUpVector({up.x(),up.y(),up.z()});
 	}
 }
