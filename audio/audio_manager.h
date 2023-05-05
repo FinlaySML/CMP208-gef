@@ -2,20 +2,32 @@
 #define _GEF_AUDIO_MANAGER_H
 
 #include <gef.h>
+#include <string>
 
 namespace gef
 {
+	struct SoundBufferID {
+		size_t val_ = 0;
+	};
 
-	struct VolumeInfo
-	{
-		float volume;
-		float pan;
+	struct PlayingSoundID {
+		size_t val_ = 0;
+	};
 
-		VolumeInfo() :
-			volume(1.0f),
-			pan(0.0f)
-		{
-		}
+	class PlayingSound {
+	public:
+		virtual void Remove() = 0;
+		virtual bool GetDeleteAutomatically() const = 0;
+		virtual void SetDeleteAutomatically(bool) = 0;
+		virtual bool GetLooping() const = 0;
+		virtual void SetLooping(bool) = 0;
+		virtual bool GetPlaying() const = 0;
+		virtual void SetPlaying(bool) = 0;
+		virtual float GetPitch() const = 0;
+		virtual void SetPitch(float) = 0;
+		virtual float GetVolume() const = 0;
+		virtual void SetVolume(float) = 0;
+		virtual ~PlayingSound() {};
 	};
 
 	class Platform;
@@ -25,29 +37,13 @@ namespace gef
 	public:
 		virtual ~AudioManager();
 
-		virtual Int32 LoadSample(const char *strFileName, const Platform& platform) = 0;
-		virtual Int32 LoadMusic(const char *strFileName, const Platform& platform) = 0;
-		virtual void UnloadMusic() = 0;
-		virtual void UnloadSample(Int32 sample_num) = 0;
-		virtual void UnloadAllSamples() = 0;
-
-		virtual Int32 PlayMusic() = 0;
-		virtual Int32 StopMusic() = 0;
-		virtual Int32 PlaySample(const Int32 sample_index, const bool looping = false) = 0;
-		virtual Int32 StopPlayingSampleVoice(const Int32 voice_index) = 0;
-
-		virtual Int32 SetSamplePitch(const Int32 voice_index, float pitch) = 0;
-		virtual Int32 SetMusicPitch(float pitch) = 0;
-		virtual Int32 GetSampleVoiceVolumeInfo(const Int32 voice_index, struct VolumeInfo& volume_info) = 0;
-		virtual Int32 SetSampleVoiceVolumeInfo(const Int32 voice_index, const struct VolumeInfo& volume_info) = 0;
-		virtual Int32 GetMusicVolumeInfo(struct VolumeInfo& volume_info) = 0;
-		virtual Int32 SetMusicVolumeInfo(const struct VolumeInfo& volume_info) = 0;
-		virtual Int32 SetMasterVolume(float volume) = 0;
-
-		virtual bool sample_voice_playing(const UInt32 voice_index) = 0;
-		virtual bool sample_voice_looping(const UInt32 voice_index) = 0;
-
-
+		virtual SoundBufferID LoadSample(const std::string& file, const Platform& platform) = 0;
+		virtual PlayingSoundID CreateSound(const SoundBufferID sound_buffer_index, const bool delete_automatically = true, const bool looping = false) = 0;
+		virtual bool LoadMusic(const std::string& file, const Platform& platform) = 0;
+		virtual PlayingSound* GetSound(const PlayingSoundID key) = 0;
+		virtual PlayingSound* GetMusic() = 0;
+		virtual void SetMasterVolume(float volume) = 0;
+		virtual void Update() = 0;
 		static AudioManager* Create();
 	protected:
 		AudioManager();

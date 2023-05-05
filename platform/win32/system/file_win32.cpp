@@ -22,6 +22,7 @@ namespace gef
 		// make sure file descriptor is invalid
 		// if it's not then the file has not been closed properly
 	//	SCE_DBG_ASSERT(file_descriptor_ == kInvalidHandle);
+		Close();
 	}
 
 	bool FileWin32::Open(const char* const filename)

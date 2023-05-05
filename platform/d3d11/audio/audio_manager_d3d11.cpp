@@ -1,6 +1,5 @@
 #include <platform/d3d11/audio/audio_manager_d3d11.h>
 
-
 namespace gef
 {
 	AudioManager* AudioManager::Create()
@@ -8,339 +7,178 @@ namespace gef
 		return new AudioManagerD3D11();
 	}
 
+	PlayingSoundD3D11::PlayingSoundD3D11(std::unique_ptr<sf::SoundSource> sound, bool del_auto, bool is_music) : 
+		sound_{ std::move(sound) }, 
+		delete_automatically_{ del_auto }, 
+		is_music_{is_music},
+		should_delete{false}
+	{
+		
+	}
+
+	void PlayingSoundD3D11::Remove() {
+		should_delete = true;
+	}
+
+	bool PlayingSoundD3D11::GetDeleteAutomatically() const {
+		return delete_automatically_;
+	}
+
+	void PlayingSoundD3D11::SetDeleteAutomatically(bool val) {
+		delete_automatically_ = val;
+	}
+
+	bool PlayingSoundD3D11::GetLooping() const {
+		if (is_music_) return ((sf::Music*)sound_.get())->getLoop();
+		else return ((sf::Sound*)sound_.get())->getLoop();
+	}
+
+	void PlayingSoundD3D11::SetLooping(bool val) {
+		if(is_music_) ((sf::Music*)sound_.get())->setLoop(val);
+		else ((sf::Sound*)sound_.get())->setLoop(val);
+	}
+
+	bool PlayingSoundD3D11::GetPlaying() const {
+		return sound_->getStatus() == sf::SoundSource::Playing;
+	}
+
+	void PlayingSoundD3D11::SetPlaying(bool val) {
+		if (val) sound_->play();
+		else sound_->pause();
+	}
+
+	float PlayingSoundD3D11::GetPitch() const {
+		return sound_->getPitch();
+	}
+
+	void PlayingSoundD3D11::SetPitch(float val) {
+		sound_->setPitch(val);
+	}
+
+	float PlayingSoundD3D11::GetVolume() const {
+		return sound_->getVolume();
+	}
+
+	void PlayingSoundD3D11::SetVolume(float val) {
+		sound_->setVolume(val);
+	}
+	
 	AudioManagerD3D11::AudioManagerD3D11() :
-	music(NULL),
-	musicFile(NULL),
-	musicBuffer(NULL)
+	sample_key_counter{0}
 	{
 	}
 
-	AudioManagerD3D11::~AudioManagerD3D11(void)
-	{
-		UnloadMusic();
-		UnloadAllSamples();
-	}
-
-	Int32 AudioManagerD3D11::LoadSample(const char * strFileName, const Platform & platform)
+	SoundBufferID AudioManagerD3D11::LoadSample(const std::string& file, const Platform& platform)
 	{
 		// Create file and open the target sound file
 		File* sampleFile = File::Create();
-		if (sampleFile->Open(strFileName)) {
+		if (sampleFile->Open(file.c_str())) {
 			// Get size of the file so we can read it properly
 			Int32 fileSize;
 			if (sampleFile->GetSize(fileSize)) {
 				// Create a buffer thats the correct size and read the data into it
-				UInt8* rawSample = new UInt8[fileSize];
+				std::vector<UInt8> rawSample((size_t)fileSize);
 				Int32 bytesRead = 0;
-				if (sampleFile->Read(rawSample, fileSize, bytesRead)) {
+				if (sampleFile->Read(rawSample.data(), fileSize, bytesRead)) {
 					// Create new sound buffer and load in the data
-					sf::SoundBuffer* newBuffer = new sf::SoundBuffer();
-					if (newBuffer->loadFromMemory(rawSample, bytesRead)) {
+					std::unique_ptr<sf::SoundBuffer> newBuffer{ new sf::SoundBuffer() };
+					if (newBuffer->loadFromMemory(rawSample.data(), bytesRead)) {
 						// Add the new buffer to the vector
-						sampleBuffers_.push_back(newBuffer);
-
-						// Create a new sound and assign it the buffer
-						sf::Sound* newSound = new sf::Sound();
-						newSound->setBuffer(*newBuffer);
-
-						// Add new sound to the samples
-						samples_.push_back(newSound);
-
-						// Delete the old raw data
-						delete[] rawSample;
+						sampleBuffers_.push_back(std::move(newBuffer));
 
 						// Close the file and delete it
 						sampleFile->Close();
 						delete sampleFile;
 
 						// Return the index of the new sounds
-						return (int)(samples_.size() - 1);
+						return { sampleBuffers_.size() - 1 };
 					}
 				}
-				delete[] rawSample;
 			}
 			sampleFile->Close();
 		}
 
 		delete sampleFile;
-		return -1;
+		return { (size_t) - 1};
 	}
 
-	Int32 AudioManagerD3D11::LoadMusic(const char * strFileName, const Platform & platform)
+	bool AudioManagerD3D11::LoadMusic(const std::string& file, const Platform & platform)
 	{
 		// If the music already has been loaded, unload it so it can be replaced
-		if (musicFile && musicBuffer && music)
-			UnloadMusic();
+		musicFile.reset(nullptr);
+		musicBuffer.clear();
+		music.reset(nullptr);
 
 		// Create a file and open the target music file
-		musicFile = gef::File::Create();
-		if (musicFile->Open(strFileName)) 
+		musicFile.reset(gef::File::Create());
+		if (musicFile->Open(file.c_str()))
 		{
 			// Get the file size so we can read the correct amount of data
 			Int32 fileSize;
 			if (musicFile->GetSize(fileSize))
 			{
 				// Create a buffer to store the music data
-				musicBuffer = new UInt8[fileSize];
+				musicBuffer.resize(fileSize);
 				Int32 bytesRead = 0;
-				if (musicFile->Read(musicBuffer, fileSize, bytesRead)) 
+				if (musicFile->Read(musicBuffer.data(), fileSize, bytesRead))
 				{
 					// Pass data buffer to the music object so it can play
-					music = new sf::Music();
-					if (music->openFromMemory(musicBuffer, bytesRead)) {
-						music->setLoop(true);
-						return 0;
+					std::unique_ptr<sf::Music> m{ new sf::Music() };
+					if (m->openFromMemory(musicBuffer.data(), bytesRead)) {
+						m->setLoop(true);
+						music.reset(new PlayingSoundD3D11(std::move(m), false, true));
+						return true;
 					}
 				}
 			}
 		}
-
-		// If any of the above checks fail, unload the music
-		UnloadMusic();
-		return -1;
+		musicFile.reset(nullptr);
+		musicBuffer.clear();
+		music.reset(nullptr);
+		return false;
 	}
 
-	Int32 AudioManagerD3D11::PlayMusic()
+	PlayingSoundID AudioManagerD3D11::CreateSound(const SoundBufferID sound_buffer_index, const bool delete_automatically, const bool looping )
 	{
-		// Play the music...
-		if (music) music->play();
-
-		return 0;
+		if (sound_buffer_index.val_ == -1) return {(size_t)-1};
+		sf::Sound* s = new sf::Sound();
+		s->setBuffer(*sampleBuffers_.at(sound_buffer_index.val_).get());
+		s->setLoop(looping);
+		s->play();
+		size_t key = ++sample_key_counter;
+		samples_.insert({ key, std::unique_ptr<PlayingSoundD3D11>(new PlayingSoundD3D11(std::unique_ptr<sf::SoundSource>(s), delete_automatically, false)) });
+		return { key };
 	}
 
-	Int32 AudioManagerD3D11::StopMusic()
-	{
-		// Stop the music...
-		if(music) music->stop();
-
-		return 0;
-	}
-
-	Int32 AudioManagerD3D11::PlaySample(const Int32 sample_index, const bool looping)
-	{
-		// Stop the request if the sample index does not exist
-		if (sample_index < 0 || sample_index >(samples_.size() - 1))
-			return -1;
-
-		// Stop request if sample is NULL
-		if (samples_[sample_index] == NULL)
-			return -1;
-
-		// Set looping and play on sample
-		samples_[sample_index]->setLoop(looping);
-		samples_[sample_index]->play();
-
-		return sample_index;
-	}
-
-	Int32 AudioManagerD3D11::StopPlayingSampleVoice(const Int32 voice_index)
-	{
-		// Stop the request if the sample index does not exist
-		if (voice_index < 0 || voice_index >(samples_.size() - 1))
-			return -1;
-
-		// Stop request if sample is NULL
-		if (samples_[voice_index] == NULL)
-			return -1;
-
-		// Stop sample
-		samples_[voice_index]->stop();
-
-		return 0;
-	}
-
-	void AudioManagerD3D11::UnloadMusic()
-	{
-		// Delete the music
-		delete music;
-		music = NULL;
-
-		// Close and delete the music file
-		if (musicFile) {
-			musicFile->Close();
-			delete musicFile;
-			musicFile = NULL;
-		}
-
-		// delete the music buffer
-		if (musicBuffer) {
-			delete[] musicBuffer;
-			musicBuffer = NULL;
-		}
-	}
-
-	void AudioManagerD3D11::UnloadSample(Int32 sample_num)
-	{
-		// Stop the request if the sample index does not exist
-		if (sample_num < 0 || sample_num >(samples_.size() - 1))
-			return;
-
-		// Delete the sample buffer
-		if (sampleBuffers_[sample_num])
-		{
-			delete sampleBuffers_[sample_num];
-			sampleBuffers_[sample_num] = NULL;
-		}
-
-		// Delete the sample itself
-		if (samples_[sample_num])
-		{
-			delete samples_[sample_num];
-			samples_[sample_num] = NULL;
-		}
-		
-	}
-	void AudioManagerD3D11::UnloadAllSamples()
-	{
-		// Remove all the samples
-		for (int i = 0; i < samples_.size(); i++)
-		{
-			UnloadSample(i);
-		}
-
-		// Empty the vectors of all contents
-		sampleBuffers_.clear();
-		samples_.clear();
-	}
-
-	Int32 AudioManagerD3D11::WriteAudioOut(const short * pBuffer)
-	{
-		printf("No writting out audio for me...");
-
-		return -1;
-	}
-
-	Int32 AudioManagerD3D11::SetSamplePitch(const Int32 voice_index, float pitch)
-	{
-		// Stop the request if the sample index does not exist
-		if (voice_index < 0 || voice_index >(samples_.size() - 1))
-			return -1;
-
-		// Stop request if sample is NULL
-		if (samples_[voice_index] == NULL)
-			return -1;
-
-		// Set the pitch of the sample
-		samples_[voice_index]->setPitch(pitch);
-
-		return 0;
-	}
-
-	Int32 AudioManagerD3D11::SetMusicPitch(float pitch)
-	{
-		// Set music pitch...
-		if(music) music->setPitch(pitch);
-
-		return 0;
-	}
-
-	Int32 AudioManagerD3D11::GetSampleVoiceVolumeInfo(const Int32 voice_index, VolumeInfo & volume_info)
-	{
-		// Stop the request if the sample index does not exist
-		if (voice_index < 0 || voice_index >(samples_.size() - 1))
-			return -1;
-
-		// Stop request if sample is NULL
-		if (samples_[voice_index] == NULL)
-			return -1;
-
-		// Assign the data to the argument
-		volume_info.volume = samples_[voice_index]->getVolume();
-		volume_info.pan = 0.f;
-
-		return 0;
-	}
-
-	Int32 AudioManagerD3D11::SetSampleVoiceVolumeInfo(const Int32 voice_index, const VolumeInfo & volume_info)
-	{
-		// Stop the request if the sample index does not exist
-		if (voice_index < 0 || voice_index >(samples_.size() - 1))
-			return -1;
-
-		// Stop request if sample is NULL
-		if (samples_[voice_index] == NULL)
-			return -1;
-
-		// Assign new volume from the argument
-		samples_[voice_index]->setVolume(volume_info.volume);
-
-		return 0;
-	}
-	Int32 AudioManagerD3D11::GetMusicVolumeInfo(VolumeInfo & volume_info)
-	{
-		// Assign volume data to argument
-		volume_info.volume = music ? music->getVolume() : 0.f;
-		volume_info.pan = 0.f;
-
-		return 0;
-	}
-
-	Int32 AudioManagerD3D11::SetMusicVolumeInfo(const VolumeInfo & volume_info)
-	{
-		// Set music volume
-		if (music) music->setVolume(volume_info.volume);
-
-		return 0;
-	}
-
-	Int32 AudioManagerD3D11::SetMasterVolume(float volume)
+	void AudioManagerD3D11::SetMasterVolume(float volume)
 	{
 		// Set the master volume control of the listener
 		sf::Listener::setGlobalVolume(volume);
-		return 0;
 	}
 
-	Int32 AudioManagerD3D11::LockMusicMutex()
-	{
-		printf("Windows Audio Manager doesn't used Mutexes");
-
-		return -1;
+	PlayingSound* AudioManagerD3D11::GetSound(const PlayingSoundID key) {
+		auto it = samples_.find(key.val_);
+		if (it == samples_.end()) return nullptr;
+		return it->second.get();
 	}
 
-	Int32 AudioManagerD3D11::UnlockMusicMutex()
-	{
-		printf("Windows Audio Manager doesn't used Mutexes");
-
-		return -1;
+	PlayingSound* AudioManagerD3D11::GetMusic() {
+		return music.get();
 	}
 
-	bool AudioManagerD3D11::sample_voice_playing(const UInt32 voice_index)
-	{
-		// Stop the request if the sample index does not exist
-		if (voice_index < 0 || voice_index >(samples_.size() - 1))
+	void AudioManagerD3D11::Update() {
+		auto pred = [&](std::unique_ptr<PlayingSoundD3D11>& sound) {
+			if (sound->should_delete) return true;
+			if (sound->delete_automatically_ && !sound->GetPlaying()) return true;
 			return false;
-
-		// Stop request if sample is NULL
-		if (samples_[voice_index] == NULL)
-			return false;
-
-		// Check sample is playing
-		return (samples_[voice_index]->getStatus() == sf::Sound::Playing);
-	}
-
-	bool AudioManagerD3D11::sample_voice_looping(const UInt32 voice_index)
-	{
-		// Stop the request if the sample index does not exist
-		if (voice_index < 0 || voice_index >(samples_.size() - 1))
-			return false;
-
-		// Stop request if sample is NULL
-		if (samples_[voice_index] == NULL)
-			return false;
-
-		// Check if sample is looping
-		return samples_[voice_index]->getLoop();
-	}
-
-	void AudioManagerD3D11::SetMusicLoop(bool looping)
-	{
-		// Set music object to loop
-		if(music) music->setLoop(looping);
-	}
-
-	bool AudioManagerD3D11::GetMusicLoop()
-	{
-		// Get value of music loop flag
-		return music->getLoop();
+		};
+		for (auto i = samples_.begin(), last = samples_.end(); i != last; ) {
+			if (pred(i->second)) {
+				i = samples_.erase(i);
+			}
+			else {
+				++i;
+			}
+		}
 	}
 }
