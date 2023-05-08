@@ -47,8 +47,12 @@ namespace gef
 		gef::ShaderInterface::VVIndex wvp_matrix_variable_index_;
 		gef::ShaderInterface::VVIndex world_matrix_variable_index_;
 
-		gef::ShaderInterface::PVIndex material_colour_variable_index_;
+		gef::ShaderInterface::PVIndex ambient_variable_index_;
+		gef::ShaderInterface::PVIndex diffuse_variable_index_;
+		gef::ShaderInterface::PVIndex specular_variable_index_;
+		gef::ShaderInterface::PVIndex shininess_variable_index_;
 
+		gef::ShaderInterface::LVIndex viewer_position_variable_index_;
 		gef::ShaderInterface::LVIndex ambient_light_colour_variable_index_;
 		gef::ShaderInterface::LVIndex light_data_variable_index_;
 

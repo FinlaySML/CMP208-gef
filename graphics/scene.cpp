@@ -102,9 +102,10 @@ namespace gef
 			materials.push_back(material);
 			materials_map[materialIter->name_id] = material;
 
-
 			// colour
-			material->set_colour(materialIter->colour);
+			gef::Colour colour{};
+			colour.SetFromAGBR(materialIter->colour);
+			material->diffuse_ = colour.GetRGBAasVector4();
 
 			// texture
 			if(materialIter->diffuse_texture != "")
@@ -121,12 +122,12 @@ namespace gef
 						Texture* texture = Texture::Create(platform, image_data);
 						textures.push_back(texture);
 						textures_map[texture_name_id] = texture;
-						material->set_texture(texture);
+						material->texture_ = texture;
 					}
 				}
 				else
 				{
-					material->set_texture(find_result->second);
+					material->texture_ = find_result->second;
 				}
 			}
 		}

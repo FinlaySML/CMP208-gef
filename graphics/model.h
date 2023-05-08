@@ -3,30 +3,24 @@
 
 #include <gef.h>
 #include <vector>
+#include <memory>
+#include <graphics/texture.h>
+#include <graphics/mesh.h>
+#include <graphics/material.h>
 
 namespace gef
 {
-	class Mesh;
-	class Texture;
-	class Material;
-
 	class Model
 	{
 	public:
-		Model();
-		~Model();
-		void Release();
-
-		inline void set_mesh(Mesh* mesh) { mesh_ = mesh; }
-		inline Mesh* mesh() { return mesh_; }
-		inline void set_textures(const std::vector<Texture*>& textures) { textures_ = textures; }
-
-		inline void AddMaterial(Material* material) { materials_.push_back(material); }
-		inline const Material* material(Int32 material_num) const { return materials_[material_num]; }
+		void SetMesh(std::unique_ptr<gef::Mesh> mesh);
+		Mesh* GetMesh();
+		void AddTexture(std::unique_ptr<Texture> textures);
+		void AddMaterial(std::unique_ptr<Material> material);
 	private:
-		Mesh* mesh_;
-		std::vector<Texture*> textures_;
-		std::vector<Material*> materials_;
+		std::unique_ptr<gef::Mesh> mesh_;
+		std::vector<std::unique_ptr<Texture>> textures_;
+		std::vector<std::unique_ptr<gef::Material>> materials_;
 	};
 }
 

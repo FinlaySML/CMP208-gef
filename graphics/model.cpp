@@ -10,21 +10,20 @@
 
 namespace gef
 {
-	Model::Model() :
-		mesh_(NULL)
+	void Model::SetMesh(std::unique_ptr<gef::Mesh> mesh)
 	{
+		mesh_ = std::move(mesh);
 	}
-
-	Model::~Model()
+	Mesh* Model::GetMesh()
 	{
-		Release();
+		return mesh_.get();
 	}
-
-	void Model::Release()
+	void Model::AddTexture(std::unique_ptr<Texture> texture)
 	{
-		for(UInt32 texture_num=0;texture_num<textures_.size();++texture_num)
-			DeleteNull(textures_[texture_num]);
-		textures_.clear();
-		DeleteNull(mesh_);
+		textures_.push_back(std::move(texture));
+	}
+	void Model::AddMaterial(std::unique_ptr<gef::Material> material)
+	{
+		materials_.push_back(std::move(material));
 	}
 }

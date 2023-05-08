@@ -2,6 +2,7 @@
 #define _MATERIAL_H
 
 #include <gef.h>
+#include <maths/vector4.h>
 
 namespace gef
 {
@@ -11,16 +12,12 @@ namespace gef
 	{
 	public:
 		Material();
-		virtual ~Material();
-
-		inline void set_texture(Texture* texture) { texture_  = texture; }
-		inline const Texture* texture() const { return texture_; }
-		inline void set_colour(UInt32 abgr) { colour_ = abgr;}
-		inline UInt32 colour() const { return colour_; }
-
-	private:
-		class Texture* texture_;
-		UInt32 colour_;
+		void SetDiffuse(UInt32 abgr);
+		Texture* texture_;
+		gef::Vector4 ambient_;
+		gef::Vector4 diffuse_;
+		gef::Vector4 specular_;
+		float shininess_;
 	};
 }
 

@@ -12,140 +12,107 @@
 #include <system/file.h>
 #include <system/memory_stream_buffer.h>
 #include <graphics/material.h>
+#include <system/debug_log.h>
 
 #include <cstdio>
-#include <cstring>
+#include <string>
 #include <istream>
 #include <cfloat>
+#include <sstream>
+#include <unordered_map>
+#include <cassert>
+#include <unordered_set>
 
 namespace gef
 {
 
 
-bool OBJLoader::Load(const char* filename, Platform& platform, Model& model)
+bool OBJLoader::Load(const std::string& filename, Platform& platform, Model& model)
 {
-	bool success = true;
-
-	std::vector<Texture*> textures;
+	//Vertex data
 	std::vector<gef::Vector4> positions;
 	std::vector<gef::Vector4> normals;
 	std::vector<gef::Vector2> uvs;
+	//9 indices for each triangle
 	std::vector<Int32> face_indices;
-	std::vector<Int32> primitive_indices;
-	std::vector<Int32> texture_indices;
+	std::vector<Int32> primitive_start_indices;
+	std::vector<std::string> primitive_materials;
+	//Filename to Texture object (so we don't load the same texture twice)
+	std::unordered_map<std::string, std::unique_ptr<Texture>> textures;
+	std::unordered_map<std::string, OBJMaterial> obj_materials;
 
-	std::map<std::string, Int32> materials;
-
-	std::string obj_filename(filename);
-	void* obj_file_data = NULL;
+	std::unique_ptr<gef::File> file{gef::File::Create()};
+	if(!file->Open(filename.c_str())) return false;
 	Int32 file_size = 0;
-	gef::File* file = gef::File::Create();
+	if(!file->GetSize(file_size)) return false;
+	std::vector<char> obj_file_data(file_size, 0);
+	Int32 bytes_read;
+	if(!file->Read(obj_file_data.data(), file_size, bytes_read)) return false;
+	if(bytes_read != file_size) return false;
+	file->Close();
 
-	success = file->Open(obj_filename.c_str());
-	if(success)
+	gef::MemoryStreamBuffer buffer(obj_file_data.data(), file_size);
+	std::istream file_stream(&buffer);
 	{
-		success = file->GetSize(file_size);
-		if(success)
-		{
-			obj_file_data = malloc(file_size);
-			success = obj_file_data != NULL;
-			if(success)
+		std::string line;
+		while (std::getline(file_stream, line)) {
+			std::istringstream line_stream(line);
+			std::string keyword;
+			line_stream >> keyword;
+			if (keyword == "mtllib")
 			{
-				Int32 bytes_read;
-				success = file->Read(obj_file_data, file_size, bytes_read);
-				if(success)
-					success = bytes_read == file_size;
-
-				file->Close();
-				delete file;
-				file = NULL;
-			}
-		}
-	}
-
-	if(!success)
-	{
-		free(obj_file_data);
-		obj_file_data = NULL;
-
-		file->Close();
-		delete file;
-		file = NULL;
-		return false;
-	}
-	gef::MemoryStreamBuffer buffer((char*)obj_file_data, file_size);
-	std::istream stream(&buffer);
-
-	{
-		while( !stream.eof() )
-		{
-		    char line[128];
-			stream >> line;
-			if ( strcmp( line, "mtllib" ) == 0 )
-			{
-				char material_filename[256];
-				stream >> material_filename;
-
-				LoadMaterials(platform, material_filename, materials, textures);
+				std::string material_filename;
+				line_stream >> material_filename;
+				LoadMaterials(platform, material_filename, obj_materials);
 			}
 
 			// vertices
-			else if ( strcmp( line, "v" ) == 0 )
+			else if (keyword == "v")
 			{
 				float x, y, z;
-				stream >> x;
-				stream >> y;
-				stream >> z;
+				line_stream >> x;
+				line_stream >> y;
+				line_stream >> z;
 				positions.push_back(gef::Vector4(x, y, z));
 			}
 
 			// normals
-			else if ( strcmp( line, "vn" ) == 0 )
+			else if (keyword == "vn" )
 			{
 				float nx, ny, nz;
-				stream >> nx;
-				stream >> ny;
-				stream >> nz;
+				line_stream >> nx;
+				line_stream >> ny;
+				line_stream >> nz;
 				normals.push_back(gef::Vector4(nx, ny, nz));
 			}
 
 			// uvs
-			else if ( strcmp( line, "vt" ) == 0 )
+			else if (keyword == "vt" )
 			{
 				float u, v;
-				stream >> u;
-				stream >> v;
+				line_stream >> u;
+				line_stream >> v;
 				uvs.push_back(gef::Vector2(u, v));
 			}
 
-			else if(strcmp( line, "usemtl" ) == 0)
+			else if(keyword == "usemtl")
 			{
 
-				char material_name[256];
-				stream >> material_name;
+				std::string material_name;
+				line_stream >> material_name;
 
 				// any time the material is changed
 				// a new primitive is created
-				primitive_indices.push_back((Int32)face_indices.size());
-
-				texture_indices.push_back(materials[material_name]);
+				primitive_start_indices.push_back((Int32)face_indices.size());
+				primitive_materials.push_back(material_name);
 			}
-			else if ( strcmp( line, "f" ) == 0 )
+			else if (keyword == "f")
 			{
 				Int32 vertexIndex[3], uvIndex[3], normalIndex[3];
-/*
-    //std::string vertex1, vertex2, vertex3;
-				Int32 matches = fscanf(file, "%d/%d/%d %d/%d/%d %d/%d/%d\n", &vertexIndex[0], &uvIndex[0], &normalIndex[0], &vertexIndex[1], &uvIndex[1], &normalIndex[1], &vertexIndex[2], &uvIndex[2], &normalIndex[2] );
-				if (matches != 9)
-				{
-//					printf("File can't be read by our simple parser : ( Try exporting with other options\n");
-					success = false;
-				}
-*/
 
-				stream >> vertexIndex[0]; stream.ignore(); stream >> uvIndex[0]; stream.ignore(); stream >> normalIndex[0];
-				stream >> vertexIndex[1]; stream.ignore(); stream >> uvIndex[1]; stream.ignore(); stream >> normalIndex[1];
-				stream >> vertexIndex[2]; stream.ignore(); stream >> uvIndex[2]; stream.ignore(); stream >> normalIndex[2];
+				line_stream >> vertexIndex[0]; line_stream.ignore(); line_stream >> uvIndex[0]; line_stream.ignore(); line_stream >> normalIndex[0];
+				line_stream >> vertexIndex[1]; line_stream.ignore(); line_stream >> uvIndex[1]; line_stream.ignore(); line_stream >> normalIndex[1];
+				line_stream >> vertexIndex[2]; line_stream.ignore(); line_stream >> uvIndex[2]; line_stream.ignore(); line_stream >> normalIndex[2];
 
 				face_indices.push_back(vertexIndex[2]);
 				face_indices.push_back(uvIndex[2]);
@@ -160,19 +127,12 @@ bool OBJLoader::Load(const char* filename, Platform& platform, Model& model)
 				face_indices.push_back(normalIndex[0]);
 			}
 		}
-
-		// don't need the font file data any more
-		free(obj_file_data);
-		obj_file_data = NULL;
-
 		// finished reading the file
-//		fclose(file);
 		// start building the mesh
 		Int32 num_faces = (Int32)face_indices.size() / 9;
 		Int32 num_vertices = num_faces*3;
-
 		// create vertex buffer
-		gef::Mesh::Vertex* vertices = new gef::Mesh::Vertex[num_vertices];
+		std::vector<gef::Mesh::Vertex> vertices(num_vertices);
 
 		// need to record min and max position values for mesh bounds
 		gef::Vector4 pos_min(FLT_MAX, FLT_MAX, FLT_MAX), pos_max(-FLT_MAX, -FLT_MAX, -FLT_MAX);
@@ -209,156 +169,164 @@ bool OBJLoader::Load(const char* filename, Platform& platform, Model& model)
 		}
 
 
-		Mesh* mesh = new Mesh(platform);
-		model.set_mesh(mesh);
-		model.set_textures(textures);
+		std::unique_ptr<Mesh> mesh(new Mesh(platform));
 
-		// set bounds
+		// Set bounds
 		gef::Aabb aabb(pos_min, pos_max);
 		gef::Sphere sphere(aabb);
 		mesh->set_aabb(aabb);
 		mesh->set_bounding_sphere(sphere);
+		std::unordered_map<std::string, Texture*> loaded_texture;
+		std::unordered_map<std::string, Material*> loaded_material;
 
-
-		// create materials for each texture
-		for(std::vector<Texture*>::iterator texture=textures.begin(); texture != textures.end(); ++texture)
-		{
-			Material* material = new Material();
-			material->set_texture(*texture);
-			model.AddMaterial(material);
-		}
-
-		mesh->InitVertexBuffer(platform, vertices, num_vertices, sizeof(gef::Mesh::Vertex));
+		mesh->InitVertexBuffer(platform, vertices.data(), vertices.size(), sizeof(gef::Mesh::Vertex));
 
 		// create primitives
-		mesh->AllocatePrimitives((UInt32)primitive_indices.size());
-
-		std::vector<UInt32*> indices;
-		indices.resize(primitive_indices.size());
-		for(UInt32 primitive_num=0;primitive_num<primitive_indices.size();++primitive_num)
+		mesh->AllocatePrimitives(primitive_start_indices.size());
+		
+		std::vector<std::vector<UInt32>> indices(primitive_start_indices.size());
+		for(UInt32 primitive_num=0;primitive_num<primitive_start_indices.size();++primitive_num)
 		{
 			Int32 index_count = 0;
 
-			if(primitive_num == primitive_indices.size()-1)
-				index_count = (Int32)face_indices.size() - primitive_indices[primitive_num];
+			if(primitive_num == primitive_start_indices.size()-1)
+				index_count = (Int32)face_indices.size() - primitive_start_indices[primitive_num];
 			else
-				index_count = primitive_indices[primitive_num+1] - primitive_indices[primitive_num];
+				index_count = primitive_start_indices[primitive_num+1] - primitive_start_indices[primitive_num];
 
 			// 9 indices per triangle, index count is the number of vertices in this primitive
 			index_count /= 3;
 
-			indices[primitive_num] = new UInt32[index_count];
+			indices[primitive_num].resize(index_count);
 
 			for(Int32 index=0;index<index_count;++index)
-				indices[primitive_num][index] = primitive_indices[primitive_num]+index;
+				indices[primitive_num][index] = primitive_start_indices[primitive_num]+index;
 
 			mesh->GetPrimitive(primitive_num)->set_type(gef::TRIANGLE_LIST);
-			mesh->GetPrimitive(primitive_num)->InitIndexBuffer(platform, indices[primitive_num], index_count, sizeof(UInt32));
-//			mesh->GetPrimitive(primitive_num)->InitIndexBuffer(platform, indices[primitive_num], 3, sizeof(UInt32));
+			mesh->GetPrimitive(primitive_num)->InitIndexBuffer(platform, indices[primitive_num].data(), index_count, sizeof(UInt32));
 
+			//Find material
 
-			Int32 texture_index = texture_indices[primitive_num];
-			if(texture_index == -1)
-				mesh->GetPrimitive(primitive_num)->set_material(NULL);
-			else
-				mesh->GetPrimitive(primitive_num)->set_material(model.material(texture_index));
-			//mesh->GetPrimitive(primitive_num)->set_texture(textures_[0]);
+			//1. Use existing if it has already been created
+			//2. Else create material
+			//3. If it has a diffuse texture:
+			//4. 	Use existing texture if it has already been created
+			//5.    Else load texture from file
+			//6. Copy over other material parameters
+			std::string material_name = primitive_materials[primitive_num];
+			auto lm_it = loaded_material.find(material_name);
+			if(lm_it != loaded_material.end()){
+				mesh->GetPrimitive(primitive_num)->set_material(lm_it->second);
+			}else{
+				auto om_it = obj_materials.find(material_name);
+				if(om_it != obj_materials.end()) {
+					Material* new_mat = new Material();
+					//Get Texture
+					std::string texture_name = om_it->second.diffuse_texture_;
+					auto lt_it = loaded_texture.find(texture_name);
+					if(lt_it != loaded_texture.end()){
+						new_mat->texture_ = lt_it->second;
+					}else if(!texture_name.empty()){
+						Texture* new_texture = gef::Texture::Create(platform, {texture_name.c_str()});
+						loaded_texture.insert({texture_name, new_texture });
+						new_mat->texture_ = new_texture;
+					}
+					//Other parameters
+					new_mat->ambient_ = om_it->second.ambient_;
+					new_mat->diffuse_ = om_it->second.diffuse_;
+					new_mat->specular_ = om_it->second.specular_;
+					new_mat->shininess_ = om_it->second.shininess_;
+					mesh->GetPrimitive(primitive_num)->set_material(new_mat);
+				}else{
+					gef::DebugOut(("No material '"+material_name+"' found while loading model '"+filename+"'\n").c_str());
+				}
+			}
 		}
-
-		// mesh construction complete
-		// clean up
-		DeleteArrayNull(vertices);
-		for(UInt32 primitive_num=0;primitive_num<indices.size();++primitive_num)
-			DeleteArrayNull(indices[primitive_num]);
-
+		for (auto tex : loaded_texture) model.AddTexture(std::unique_ptr<Texture>{tex.second});
+		for (auto mat : loaded_material) model.AddMaterial(std::unique_ptr<Material>{mat.second});
+		model.SetMesh(std::move(mesh));
 	}
-	return success;
+	return true;
 }
 
-bool OBJLoader::LoadMaterials(Platform& platform, const char* filename, std::map<std::string, Int32>& materials, std::vector<Texture*>& textures)
+bool OBJLoader::LoadMaterials(Platform& platform, const std::string& filename, std::unordered_map<std::string, OBJMaterial>& materials)
 {
-	PNGLoader png_loader;
-
-	bool success = true;
-
-
-	std::string mtl_filename(filename);
-	void* mtl_file_data = NULL;
+	std::unique_ptr<gef::File> file{gef::File::Create()};
+	if(!file->Open(filename.c_str())) return false;
 	Int32 file_size = 0;
-	gef::File* file = gef::File::Create();
-	success = file->Open(mtl_filename.c_str());
-	if(success)
+	if(!file->GetSize(file_size)) return false;
+	std::vector<char> mtl_file_data(file_size, 0);
+	Int32 bytes_read;
+	if(!file->Read(mtl_file_data.data(), file_size, bytes_read)) return false;
+	if(bytes_read != file_size) return false;
+
+	gef::MemoryStreamBuffer buffer(mtl_file_data.data(), file_size);
+	std::istream file_stream(&buffer);
+	
+	OBJMaterial* current{nullptr};
+	std::string line;
+	while( std::getline(file_stream, line) )
 	{
-		success = file->GetSize(file_size);
-		if(success)
+		std::istringstream line_stream(line);
+		std::string keyword;
+		line_stream >> keyword;
+		if (keyword == "newmtl"  )
 		{
-			mtl_file_data = malloc(file_size);
-			success = mtl_file_data != NULL;
-			if(success)
-			{
-				Int32 bytes_read;
-				success = file->Read(mtl_file_data, file_size, bytes_read);
-				if(success)
-					success = bytes_read == file_size;
-			}
+			std::string material_name;
+			line_stream >> material_name;
+			materials[material_name] = OBJMaterial();
+			current = &materials[material_name];
+		}
+		else if (keyword == "Ka"){
+			assert(current);
+			float r, g, b;
+			line_stream >> r;
+			line_stream >> g;
+			line_stream >> b;
+			current->ambient_ = {r,g,b, 1};
+		}
+		else if (keyword == "Kd") {
+			assert(current);
+			float r, g, b;
+			line_stream >> r;
+			line_stream >> g;
+			line_stream >> b;
+			current->diffuse_ = { r,g,b,1 };
+		}
+		else if (keyword == "Ks") {
+			assert(current);
+			float r, g, b;
+			line_stream >> r;
+			line_stream >> g;
+			line_stream >> b;
+			current->specular_ = { r,g,b,1 };
+		}
+		else if (keyword == "Ns") {
+			assert(current);
+			line_stream >> current->shininess_;
+		}
+		else if (keyword == "map_Ka") {
+			assert(current);
+			line_stream >> current->ambient_texture_;
+		}
+		else if(keyword == "map_Kd") {
+			assert(current);
+			line_stream >> current->diffuse_texture_;
+		}
+		else if (keyword == "map_Ks") {
+			assert(current);
+			line_stream >> current->specular_texture_;
 		}
 	}
+	return true;
+}
 
-	if(!success)
-	{
-		free(mtl_file_data);
-		mtl_file_data = NULL;
-
-		delete file;
-		file = NULL;
-		return false;
-	}
-	gef::MemoryStreamBuffer buffer((char*)mtl_file_data, file_size);
-	std::istream stream(&buffer);
-
-
-	{
-		std::map<std::string, std::string> material_name_mappings;
-		char material_name[256];
-		while( !stream.eof() )
-		{
-		    char line[128];
-			stream >> line;
-
-			if ( strcmp( line, "newmtl" ) == 0 )
-			{
-				stream >> material_name;
-				material_name_mappings[material_name] = "";
-			}
-			else if(strcmp( line, "map_Kd" ) == 0)
-			{
-				char texture_name[256];
-				stream >> texture_name;
-				material_name_mappings[material_name] = texture_name;
-			}
-		}
-
-		free(mtl_file_data);
-		mtl_file_data = NULL;
-
-		for(std::map<std::string, std::string>::iterator iter = material_name_mappings.begin(); iter != material_name_mappings.end(); ++iter)
-		{
-			if(iter->second.compare("") != 0)
-			{
-				gef::ImageData image_data{ iter->second.c_str() };
-				Texture* texture = gef::Texture::Create(platform, image_data);
-				textures.push_back(texture);
-				materials[iter->first] = (Int32)textures.size()-1;
-			}
-			else
-			{
-				materials[iter->first] = -1;
-			}
-		}
-	}
-
-	return success;
-
+OBJLoader::OBJMaterial::OBJMaterial() :
+ambient_{0,0,0},
+diffuse_{1,1,1},
+specular_{0,0,0},
+shininess_{1}
+{
 }
 
 }

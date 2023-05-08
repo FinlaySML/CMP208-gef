@@ -27,7 +27,10 @@ namespace gef
 	:Shader(platform)
 	,wvp_matrix_variable_index_{0}
 	,world_matrix_variable_index_{0}
-	,material_colour_variable_index_{0}
+	, ambient_variable_index_{ 0 }
+	, diffuse_variable_index_{ 0 }
+	, specular_variable_index_{ 0 }
+	, shininess_variable_index_{ 0 }
 	,ambient_light_colour_variable_index_{0}
 	,light_data_variable_index_{0}
 	,texture_sampler_index_{0}
@@ -43,9 +46,13 @@ namespace gef
 		bone_matrices_variable_index_ = device_interface_->AddVertexShaderVariable("bone_matrices", ShaderInterface::kMatrix44, 128);
 
 		//Pixel Shader Variables
-		material_colour_variable_index_ = device_interface_->AddPixelShaderVariable("material_colour", gef::ShaderInterface::kVector4);
+		ambient_variable_index_ = device_interface_->AddPixelShaderVariable("ambient", ShaderInterface::kVector4);
+		diffuse_variable_index_ = device_interface_->AddPixelShaderVariable("diffuse", ShaderInterface::kVector4);
+		specular_variable_index_ = device_interface_->AddPixelShaderVariable("specular", ShaderInterface::kVector4);
+		shininess_variable_index_ = device_interface_->AddPixelShaderVariable("shininess", ShaderInterface::kFloat);
 
 		//Light Shader Variables
+		viewer_position_variable_index_ = device_interface_->AddLightShaderVariable("viewer_position", gef::ShaderInterface::kVector4);
 		ambient_light_colour_variable_index_ = device_interface_->AddLightShaderVariable("ambient_light_colour", gef::ShaderInterface::kVector4);
 		light_data_variable_index_ = device_interface_->AddLightShaderVariable("lights", gef::ShaderInterface::kLightData, MAX_LIGHTS);
 
@@ -87,7 +94,10 @@ namespace gef
 	Default3DSkinningShader::Default3DSkinningShader()
 		: wvp_matrix_variable_index_{0}
 		, world_matrix_variable_index_{0}
-		, material_colour_variable_index_{0}
+		, ambient_variable_index_{ 0 }
+		, diffuse_variable_index_{ 0 }
+		, specular_variable_index_{ 0 }
+		, shininess_variable_index_{ 0 }
 		, ambient_light_colour_variable_index_{0}
 		, light_data_variable_index_{0}
 		, texture_sampler_index_{0}
@@ -113,7 +123,12 @@ namespace gef
 		if (i < MAX_LIGHTS) shader_lights[i].radius_ = -1.f;
 
 		view_projection_matrix_ = view_matrix * projection_matrix;
-
+		gef::Matrix44 inverse_vp{};
+		inverse_vp.Inverse(view_projection_matrix_);
+		gef::Vector4 viewer_position{ inverse_vp.GetRow(3) };
+		viewer_position *= 1 / viewer_position.w();
+		viewer_position.set_w(1);
+		device_interface_->SetLightShaderVariable(viewer_position_variable_index_, (void*)&viewer_position);
 		device_interface_->SetLightShaderVariable(ambient_light_colour_variable_index_, (void*)&ambient_light_colour);
 		device_interface_->SetLightShaderVariable(light_data_variable_index_, (void*)shader_lights.data());
 
@@ -144,19 +159,13 @@ namespace gef
 
 	void Default3DSkinningShader::SetMaterialData(const gef::Material* material)
 	{
-		if (material) {
-			primitive_data_.material_texture = material->texture();
-			gef::Colour colour{};
-			colour.SetFromAGBR(material->colour());
-			primitive_data_.material_colour = colour.GetRGBAasVector4();
-		}
-		else {
-			primitive_data_.material_texture = NULL;
-			primitive_data_.material_colour = { 1,1,1,1 };
-		}
-
-		device_interface_->SetPixelShaderVariable(material_colour_variable_index_, (float*)&primitive_data_.material_colour);
-		device_interface_->SetTextureSampler(texture_sampler_index_, primitive_data_.material_texture);
+		Material default_material{};
+		const Material* mat = (material != nullptr) ? material : &default_material;
+		device_interface_->SetPixelShaderVariable(ambient_variable_index_, &mat->ambient_);
+		device_interface_->SetPixelShaderVariable(diffuse_variable_index_, &mat->diffuse_);
+		device_interface_->SetPixelShaderVariable(specular_variable_index_, &mat->specular_);
+		device_interface_->SetPixelShaderVariable(shininess_variable_index_, &mat->shininess_);
+		device_interface_->SetTextureSampler(texture_sampler_index_, mat->texture_);
 	}
 
 } /* namespace gef */
