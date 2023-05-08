@@ -44,7 +44,7 @@ public:
 	AudioManagerD3D11();
 
 	SoundBufferID LoadSample(const std::string& file, const Platform& platform) override;
-	PlayingSoundID CreateSound(const SoundBufferID sound_buffer_index, const bool delete_when_finished) override;
+	PlayingSoundID CreateSound(const SoundBufferID sound_buffer_index, const bool delete_when_finished, const bool spatial) override;
 	bool LoadMusic(const std::string& file, const Platform& platform) override;
 	PlayingSound* GetSound(const PlayingSoundID key) override;
 	PlayingSound* GetMusic() override;

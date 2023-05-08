@@ -45,7 +45,7 @@ namespace gef
 		virtual ~AudioManager();
 
 		virtual SoundBufferID LoadSample(const std::string& file, const Platform& platform) = 0;
-		virtual PlayingSoundID CreateSound(const SoundBufferID sound_buffer_index, const bool delete_when_finished = true) = 0;
+		virtual PlayingSoundID CreateSound(const SoundBufferID sound_buffer_index, const bool delete_when_finished = true, const bool spatial = false) = 0;
 		virtual bool LoadMusic(const std::string& file, const Platform& platform) = 0;
 		virtual PlayingSound* GetSound(const PlayingSoundID key) = 0;
 		virtual PlayingSound* GetMusic() = 0;

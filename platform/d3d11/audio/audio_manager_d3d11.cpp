@@ -171,13 +171,13 @@ namespace gef
 		return false;
 	}
 
-	PlayingSoundID AudioManagerD3D11::CreateSound(const SoundBufferID sound_buffer_index, const bool delete_when_finished)
+	PlayingSoundID AudioManagerD3D11::CreateSound(const SoundBufferID sound_buffer_index, const bool delete_when_finished, const bool spatial)
 	{
 		if (sound_buffer_index.val_ == -1) return {(size_t)-1};
 		sf::Sound* s = new sf::Sound();
 		s->setBuffer(*sampleBuffers_.at(sound_buffer_index.val_).get());
 		s->setAttenuation(0);
-		s->setRelativeToListener(false);
+		s->setRelativeToListener(!spatial);
 		s->play();
 		size_t key = ++sample_key_counter;
 		samples_.insert({ key, std::unique_ptr<PlayingSoundD3D11>(new PlayingSoundD3D11(std::unique_ptr<sf::SoundSource>(s), delete_when_finished, false)) });
