@@ -95,8 +95,10 @@ namespace gef
 		}
 
 		// create default texture
-		default_texture_ = Texture::CreateCheckerTexture(16, 1, *this);
+		default_texture_ = Texture::CreateSolidTexture(16, gef::Colour{ 1.f, 1.f, 1.f }, *this);
 		AddTexture(default_texture_);
+		default_normal_ = Texture::CreateSolidTexture(16, gef::Colour{ .5f, .5f, 1.f }, *this);
+		AddTexture(default_normal_);
 
 		SetFullscreen(fullscreen);
 	}

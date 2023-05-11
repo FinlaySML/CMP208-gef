@@ -2,6 +2,7 @@
 #define _GEF_TEXTURE_H
 
 #include <gef.h>
+#include <graphics/colour.h>
 
 namespace gef
 {
@@ -17,7 +18,7 @@ public:
 
 	static Texture* Create(const Platform& platform, const ImageData& image_data);
 	static Texture* CreateCheckerTexture(const Int32 size, const Int32 num_checkers, const Platform& platform);
-
+	static Texture* CreateSolidTexture(const Int32 size, gef::Colour colour, const Platform& platform);
 protected:
 	Texture();
 	Texture(const Platform& platform, const ImageData& image_data);

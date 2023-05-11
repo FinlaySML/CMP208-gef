@@ -59,7 +59,9 @@ namespace gef
 		gef::ShaderInterface::LVIndex ambient_light_colour_variable_index_;
 		gef::ShaderInterface::LVIndex light_data_variable_index_;
 
-		gef::ShaderInterface::TSIndex texture_sampler_index_;
+		gef::ShaderInterface::TSIndex diffuse_sampler_index_;
+		gef::ShaderInterface::TSIndex specular_sampler_index_;
+		gef::ShaderInterface::TSIndex normal_sampler_index_;
 
 		Matrix44 bones_matrices[MAX_NUM_BONE_MATRICES];
 		PrimitiveData primitive_data_;

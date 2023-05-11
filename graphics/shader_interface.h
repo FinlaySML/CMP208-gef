@@ -31,6 +31,12 @@ namespace gef
 			kLightData
 		};
 
+		enum class TextureType {
+			DIFFUSE,
+			SPECULAR,
+			NORMAL
+		};
+
 		struct ShaderVariable
 		{
 			std::string name;
@@ -61,6 +67,7 @@ namespace gef
 		{
 			std::string name;
 			const Texture* texture;
+			TextureType type;
 		};
 
 		virtual ~ShaderInterface();
@@ -83,7 +90,7 @@ namespace gef
 		LVIndex AddLightShaderVariable(const char* variable_name, VariableType variable_type, Int32 variable_count = 1);
 		void SetLightShaderVariable(LVIndex variable_index, const void* value);
 
-		TSIndex AddTextureSampler(const char* texture_sampler_name);
+		TSIndex AddTextureSampler(const char* texture_sampler_name, TextureType type = TextureType::DIFFUSE);
 		void SetTextureSampler(TSIndex texture_sampler_index, const Texture* texture);
 
 		virtual void UseProgram() = 0;

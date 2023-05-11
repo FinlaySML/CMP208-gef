@@ -30,6 +30,7 @@ namespace gef
 			std::string ambient_texture_;//map_Ka path (not used by shader)
 			std::string diffuse_texture_;//map_Kd path 
 			std::string specular_texture_;//map_Ks path (not used by shader)
+			std::string normal_texture_;
 		};
 		bool LoadMaterials(Platform& platform, const std::string& filename, std::unordered_map<std::string, OBJMaterial>& materials);
 	};

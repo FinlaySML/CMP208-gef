@@ -5,7 +5,9 @@
 namespace gef
 {
 	Material::Material() : 
-		texture_{nullptr},
+		texture_diffuse_{nullptr},
+		texture_specular_{nullptr},
+		texture_normal_{nullptr},
 		ambient_{0,0,0},
 		diffuse_{1,1,1,1},
 		specular_{0,0,0},

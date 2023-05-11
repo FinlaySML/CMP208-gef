@@ -106,6 +106,8 @@ namespace gef
 		inline void set_touch_input_manager(TouchInputManager* touch_input_manager) { touch_input_manager_ = touch_input_manager; }
 		inline TouchInputManager* touch_input_manager() const { return touch_input_manager_; }
 		inline const Texture* default_texture() const { return default_texture_; }
+		inline const Texture* default_normal() const { return default_normal_; }
+
 		inline void set_depth_buffer(DepthBuffer* depth_buffer) { depth_buffer_ = depth_buffer; }
 		inline DepthBuffer* depth_buffer() const { return depth_buffer_; }
 
@@ -127,6 +129,7 @@ namespace gef
 		TouchInputManager* touch_input_manager_;
 
 		gef::Texture* default_texture_;
+		gef::Texture* default_normal_;
 	};
 }
 

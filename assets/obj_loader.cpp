@@ -221,15 +221,40 @@ bool OBJLoader::Load(const std::string& filename, Platform& platform, Model& mod
 				auto om_it = obj_materials.find(material_name);
 				if(om_it != obj_materials.end()) {
 					Material* new_mat = new Material();
-					//Get Texture
-					std::string texture_name = om_it->second.diffuse_texture_;
-					auto lt_it = loaded_texture.find(texture_name);
-					if(lt_it != loaded_texture.end()){
-						new_mat->texture_ = lt_it->second;
-					}else if(!texture_name.empty()){
-						Texture* new_texture = gef::Texture::Create(platform, {texture_name.c_str()});
-						loaded_texture.insert({texture_name, new_texture });
-						new_mat->texture_ = new_texture;
+					{//Get Diffuse Texture
+						std::string name = om_it->second.diffuse_texture_;
+						auto lt_it = loaded_texture.find(name);
+						if(lt_it != loaded_texture.end()){
+							new_mat->texture_diffuse_ = lt_it->second;
+						}else if(!name.empty()){
+							Texture* new_texture = gef::Texture::Create(platform, {name.c_str()});
+							loaded_texture.insert({name, new_texture });
+							new_mat->texture_diffuse_ = new_texture;
+						}
+					}
+					{//Get Specular Texture
+						std::string name = om_it->second.specular_texture_;
+						auto lt_it = loaded_texture.find(name);
+						if (lt_it != loaded_texture.end()) {
+							new_mat->texture_specular_ = lt_it->second;
+						}
+						else if (!name.empty()) {
+							Texture* new_texture = gef::Texture::Create(platform, { name.c_str() });
+							loaded_texture.insert({ name, new_texture });
+							new_mat->texture_specular_ = new_texture;
+						}
+					}
+					{//Get Normal Texture
+						std::string name = om_it->second.normal_texture_;
+						auto lt_it = loaded_texture.find(name);
+						if (lt_it != loaded_texture.end()) {
+							new_mat->texture_normal_ = lt_it->second;
+						}
+						else if (!name.empty()) {
+							Texture* new_texture = gef::Texture::Create(platform, { name.c_str() });
+							loaded_texture.insert({ name, new_texture });
+							new_mat->texture_normal_ = new_texture;
+						}
 					}
 					//Other parameters
 					new_mat->ambient_ = om_it->second.ambient_;
@@ -316,6 +341,10 @@ bool OBJLoader::LoadMaterials(Platform& platform, const std::string& filename, s
 		else if (keyword == "map_Ks") {
 			assert(current);
 			line_stream >> current->specular_texture_;
+		}
+		else if (keyword == "norm") {
+			assert(current);
+			line_stream >> current->normal_texture_;
 		}
 	}
 	return true;

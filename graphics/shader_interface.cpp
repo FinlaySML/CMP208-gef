@@ -108,11 +108,12 @@ namespace gef
 		parameters_.push_back(shader_parameter);
 	}
 
-	ShaderInterface::TSIndex ShaderInterface::AddTextureSampler(const char* texture_sampler_name)
+	ShaderInterface::TSIndex ShaderInterface::AddTextureSampler(const char* texture_sampler_name, ShaderInterface::TextureType type)
 	{
 		TextureSampler texture_sampler;
 		texture_sampler.name = texture_sampler_name;
 		texture_sampler.texture = NULL;
+		texture_sampler.type = type;
 		texture_samplers_.push_back(texture_sampler);
 		return {(UInt32)texture_samplers_.size()-1};
 	}

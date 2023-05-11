@@ -122,12 +122,12 @@ namespace gef
 						Texture* texture = Texture::Create(platform, image_data);
 						textures.push_back(texture);
 						textures_map[texture_name_id] = texture;
-						material->texture_ = texture;
+						material->texture_diffuse_ = texture;
 					}
 				}
 				else
 				{
-					material->texture_ = find_result->second;
+					material->texture_diffuse_ = find_result->second;
 				}
 			}
 		}

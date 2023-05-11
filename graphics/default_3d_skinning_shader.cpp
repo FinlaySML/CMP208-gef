@@ -33,7 +33,9 @@ namespace gef
 	, shininess_variable_index_{ 0 }
 	,ambient_light_colour_variable_index_{0}
 	,light_data_variable_index_{0}
-	,texture_sampler_index_{0}
+	,diffuse_sampler_index_{0}
+	,specular_sampler_index_{0}
+	,normal_sampler_index_{0}
 	,bone_matrices_variable_index_{0}
 	{
 		// Compile shaders
@@ -56,7 +58,9 @@ namespace gef
 		ambient_light_colour_variable_index_ = device_interface_->AddLightShaderVariable("ambient_light_colour", gef::ShaderInterface::kVector4);
 		light_data_variable_index_ = device_interface_->AddLightShaderVariable("lights", gef::ShaderInterface::kLightData, MAX_LIGHTS);
 
-		texture_sampler_index_ = device_interface_->AddTextureSampler("texture_sampler");
+		diffuse_sampler_index_ = device_interface_->AddTextureSampler("diffuse_sampler", gef::ShaderInterface::TextureType::DIFFUSE);
+		specular_sampler_index_ = device_interface_->AddTextureSampler("specular_sampler", gef::ShaderInterface::TextureType::SPECULAR);
+		normal_sampler_index_ = device_interface_->AddTextureSampler("normal_sampler", gef::ShaderInterface::TextureType::NORMAL);
 
 		device_interface_->AddVertexParameter("position", ShaderInterface::kVector3, 0, "POSITION", 0);
 		device_interface_->AddVertexParameter("normal", ShaderInterface::kVector3, 12, "NORMAL", 0);
@@ -100,7 +104,9 @@ namespace gef
 		, shininess_variable_index_{ 0 }
 		, ambient_light_colour_variable_index_{0}
 		, light_data_variable_index_{0}
-		, texture_sampler_index_{0}
+		, diffuse_sampler_index_{ 0 }
+		, specular_sampler_index_{ 0 }
+		, normal_sampler_index_{ 0 }
 	{
 	}
 
@@ -165,7 +171,9 @@ namespace gef
 		device_interface_->SetPixelShaderVariable(diffuse_variable_index_, &mat->diffuse_);
 		device_interface_->SetPixelShaderVariable(specular_variable_index_, &mat->specular_);
 		device_interface_->SetPixelShaderVariable(shininess_variable_index_, &mat->shininess_);
-		device_interface_->SetTextureSampler(texture_sampler_index_, mat->texture_);
+		device_interface_->SetTextureSampler(diffuse_sampler_index_, mat->texture_diffuse_);
+		device_interface_->SetTextureSampler(specular_sampler_index_, mat->texture_specular_);
+		device_interface_->SetTextureSampler(normal_sampler_index_, mat->texture_normal_);
 	}
 
 } /* namespace gef */

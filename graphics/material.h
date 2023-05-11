@@ -13,7 +13,9 @@ namespace gef
 	public:
 		Material();
 		void SetDiffuse(UInt32 abgr);
-		Texture* texture_;
+		Texture* texture_diffuse_;
+		Texture* texture_specular_;
+		Texture* texture_normal_;
 		gef::Vector4 ambient_;
 		gef::Vector4 diffuse_;
 		gef::Vector4 specular_;

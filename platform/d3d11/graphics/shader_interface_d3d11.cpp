@@ -173,9 +173,10 @@ namespace gef
 		{
 			if (texture_sampler->texture)
 				texture_sampler->texture->Bind(platform, texture_stage_num);
+			else if (texture_sampler->type == TextureType::NORMAL && platform.default_normal())
+				platform.default_normal()->Bind(platform, texture_stage_num);
 			else if (platform.default_texture())
 				platform.default_texture()->Bind(platform, texture_stage_num);
-				
 		}
 
 	}
