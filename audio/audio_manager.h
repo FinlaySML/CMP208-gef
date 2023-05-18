@@ -50,6 +50,7 @@ namespace gef
 		virtual PlayingSound* GetSound(const PlayingSoundID key) = 0;
 		virtual PlayingSound* GetMusic() = 0;
 		virtual void SetMasterVolume(float volume) = 0;
+		virtual float GetMasterVolume() const = 0;
 		virtual void Update() = 0;
 		virtual void UpdateSpatialAudio(gef::Vector4 position, gef::Vector4 direction, gef::Vector4 up) = 0;
 		static AudioManager* Create();

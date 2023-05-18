@@ -190,6 +190,11 @@ namespace gef
 		sf::Listener::setGlobalVolume(volume);
 	}
 
+	float AudioManagerD3D11::GetMasterVolume() const
+	{
+		return sf::Listener::getGlobalVolume();
+	}
+
 	PlayingSound* AudioManagerD3D11::GetSound(const PlayingSoundID key) {
 		auto it = samples_.find(key.val_);
 		if (it == samples_.end()) return nullptr;

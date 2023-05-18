@@ -49,6 +49,7 @@ public:
 	PlayingSound* GetSound(const PlayingSoundID key) override;
 	PlayingSound* GetMusic() override;
 	void SetMasterVolume(float volume) override;
+	float GetMasterVolume() const override;
 	void Update() override;
 	void UpdateSpatialAudio(gef::Vector4 position, gef::Vector4 direction, gef::Vector4 up) override;
 
