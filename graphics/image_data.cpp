@@ -3,6 +3,7 @@
 #include <cstring>
 #include <png.h>
 #include <system/debug_log.h>
+#include <string>
 
 namespace gef
 {
@@ -38,6 +39,9 @@ namespace gef
                 set_image(buffer);
                 set_width(image.width);
                 set_height(image.height);
+#ifdef _DEBUG
+                gef::DebugOut(("Loaded: " + std::string(filename) + "\n").c_str());
+#endif
                 return;
             }
             free(buffer);

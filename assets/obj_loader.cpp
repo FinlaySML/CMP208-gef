@@ -271,6 +271,9 @@ bool OBJLoader::Load(const std::string& filename, Platform& platform, Model& mod
 		for (auto mat : loaded_material) model.AddMaterial(std::unique_ptr<Material>{mat.second});
 		model.SetMesh(std::move(mesh));
 	}
+#ifdef _DEBUG
+	gef::DebugOut(("Loaded: " + filename + "\n").c_str());
+#endif
 	return true;
 }
 
@@ -347,6 +350,9 @@ bool OBJLoader::LoadMaterials(Platform& platform, const std::string& filename, s
 			line_stream >> current->normal_texture_;
 		}
 	}
+#ifdef _DEBUG
+	gef::DebugOut(("Loaded: "+filename+"\n").c_str());
+#endif
 	return true;
 }
 
