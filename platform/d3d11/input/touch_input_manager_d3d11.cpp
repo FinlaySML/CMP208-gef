@@ -11,7 +11,8 @@ namespace gef
 	TouchInputManagerD3D11::TouchInputManagerD3D11(const PlatformD3D11* platform, LPDIRECTINPUT8 direct_input) :
 		direct_input_(direct_input),
 		mouse_(NULL),
-		platform_(platform)
+		platform_(platform),
+		panel_enabled_{true}
 	{
 		HRESULT hresult = S_OK;
 		hresult = direct_input_->CreateDevice(GUID_SysMouse, &mouse_, NULL);
