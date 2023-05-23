@@ -14,7 +14,8 @@ namespace gef
 		clear_render_target_enabled_(true),
 		clear_depth_buffer_enabled_(true),
 		clear_stencil_buffer_enabled_(true),
-		fov_(0.0f)
+		fov_(0.0f),
+		draw_count_{0}
 	{
 		projection_matrix_.SetIdentity();
 		view_matrix_.SetIdentity();

@@ -78,6 +78,11 @@ namespace gef
 		inline void set_clear_stencil_buffer_enabled(bool val) { clear_stencil_buffer_enabled_ = val; }
 		inline float fov() const { return fov_; }
 		inline void set_fov(float val) { fov_ = val; }
+		int GetAndResetDrawCount() {
+			int value = draw_count_;
+			draw_count_ = 0;
+			return value;
+		};
 	protected:
 		Renderer3D(Platform& platform);
 		void CalculateInverseWorldTransposeMatrix();
@@ -102,6 +107,7 @@ namespace gef
 		bool clear_stencil_buffer_enabled_;
 
 		float fov_;
+		int draw_count_;
 	};
 }
 #endif // _GEF_RENDERER_3D_H

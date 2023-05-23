@@ -188,6 +188,8 @@ namespace gef
 
 			if(vertex_buffer && shader_)
 			{
+				draw_count_++;
+				
 				shader_->SetMeshData(mesh_instance);
 
 				shader_->device_interface()->UseProgram();
@@ -234,6 +236,7 @@ namespace gef
 						else
 							platform_d3d.device_context()->Draw(vertex_buffer->num_vertices(), 0);
 
+							
 
 						index_buffer->Unbind(platform_);
 						shader_->device_interface()->UnbindTextureResources(platform());
@@ -260,6 +263,8 @@ namespace gef
 
 			if (vertex_buffer && shader_)
 			{
+				draw_count_++;
+				
 				shader_->SetMeshData(transform);
 
 				shader_->device_interface()->UseProgram();

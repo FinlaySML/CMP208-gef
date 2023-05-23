@@ -36,38 +36,27 @@ namespace gef
 	{
 		// This can be optimised
 		Aabb result;
-
-		gef::Vector4 vertices[8];
-
-		vertices[0].set_x(min_vtx_.x());
-		vertices[0].set_y(min_vtx_.y());
-		vertices[0].set_z(min_vtx_.z());
-		vertices[1].set_x(max_vtx_.x());
-		vertices[1].set_y(min_vtx_.y());
-		vertices[1].set_z(min_vtx_.z());
-		vertices[2].set_x(min_vtx_.x());
-		vertices[2].set_y(max_vtx_.y());
-		vertices[2].set_z(min_vtx_.z());
-		vertices[3].set_x(max_vtx_.x());
-		vertices[3].set_y(max_vtx_.y());
-		vertices[3].set_z(min_vtx_.z());
-		vertices[4].set_x(min_vtx_.x());
-		vertices[4].set_y(min_vtx_.y());
-		vertices[4].set_z(max_vtx_.z());
-		vertices[5].set_x(max_vtx_.x());
-		vertices[5].set_y(min_vtx_.y());
-		vertices[5].set_z(max_vtx_.z());
-		vertices[6].set_x(min_vtx_.x());
-		vertices[6].set_y(max_vtx_.y());
-		vertices[6].set_z(max_vtx_.z());
-		vertices[7].set_x(max_vtx_.x());
-		vertices[7].set_y(max_vtx_.y());
-		vertices[7].set_z(max_vtx_.z());
-
-		for(Int32 vertex_num=0; vertex_num < 8;++vertex_num)
-			result.Update(vertices[vertex_num].Transform(transform_matrix));
+		for(gef::Vector4& vertex : GetCorners()) {
+			vertex.set_w(1);
+			gef::Vector4 tformed = vertex.TransformW(transform_matrix);
+			float factor = 1.f/tformed.w();
+			tformed *= factor;
+			tformed.set_w(1);
+			result.Update(tformed);
+		}
 
 		return result;
+	}
+
+	std::vector<gef::Vector4> Aabb::GetCorners() const {
+		std::vector<gef::Vector4> vertices(8);
+		for(int i = 0; i < 8; i++){
+			vertices[i].set_x((i & 0b001) ? min_vtx_.x() : max_vtx_.x());
+			vertices[i].set_y((i & 0b010) ? min_vtx_.y() : max_vtx_.y());
+			vertices[i].set_z((i & 0b100) ? min_vtx_.z() : max_vtx_.z());
+			vertices[i].set_w(1);
+		}
+		return vertices;
 	}
 
 }

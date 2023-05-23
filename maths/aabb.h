@@ -2,6 +2,7 @@
 #define _GEF_AABB_H
 
 #include <maths/vector4.h>
+#include <vector>
 
 namespace gef
 {
@@ -30,6 +31,8 @@ namespace gef
 		/// @param[in] transform_matrix		The matrix to transform this AABB.
 		/// @return The transformed AABB.
 		const Aabb Transform(const Matrix44& transform_matrix) const;
+
+		std::vector<gef::Vector4> GetCorners() const;
 
 		/// @brief Sets the minimum bounds of the AABB.
 		/// @param[in] min_vtx		The minimum bounds.

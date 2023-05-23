@@ -32,6 +32,11 @@ namespace gef
 		return values_[0]*_vec.x() + values_[1]*_vec.y() + values_[2]*_vec.z();
 	}
 
+	float Vector4::DotProductW(const Vector4& _vec) const
+	{
+		return values_[0] * _vec.x() + values_[1] * _vec.y() + values_[2] * _vec.z() + values_[3] * _vec.w();
+	}
+
 	const Vector4 Vector4::CrossProduct(const Vector4& _vec) const
 	{
 		Vector4 result;

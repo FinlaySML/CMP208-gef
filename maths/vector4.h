@@ -18,16 +18,21 @@ public:
 	Vector4& operator -= (const Vector4& _vec);
 	Vector4& operator += (const Vector4& _vec);
 	const Vector4 operator * (const float _scalar) const;
+	const Vector4 operator * (const gef::Vector4& _scalar) const;
+
 	const Vector4 operator / (const float _scalar) const;
 	Vector4& operator *= (const float _scalar);
 	Vector4& operator /= (const float _scalar);
-	const float operator[] (const int index) const;
+	float& operator[] (int index);
+	const float& operator[] (int index) const;
+
 	const Vector4 operator - () const;
 
 	void Normalise();
 	float LengthSqr() const;
 	float Length() const;
 	float DotProduct(const Vector4& _vec) const;
+	float DotProductW(const Vector4& _vec) const;
 	const Vector4 CrossProduct(const Vector4& _vec) const;
 	const Vector4 Transform(const class Matrix44& _mat) const;
 	const Vector4 TransformNoTranslation(const class Matrix44& _mat) const;

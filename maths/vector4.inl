@@ -60,6 +60,16 @@ namespace gef
 		return Vector4(values_[0] * _scalar, values_[1] * _scalar, values_[2] * _scalar);
 	}
 
+	inline const Vector4 Vector4::operator*(const gef::Vector4& other) const {
+		return Vector4(
+			values_[0] * other[0], 
+			values_[1] * other[1],
+			values_[2] * other[2], 
+			values_[3] * other[3]
+		);
+	}
+
+
 	inline const Vector4 Vector4::operator/(const float _scalar) const
 	{
 		return Vector4(values_[0] / _scalar, values_[1] / _scalar, values_[2] / _scalar);
@@ -84,7 +94,12 @@ namespace gef
 		return *this;
 	}
 
-	inline const float Vector4::operator[] (const int index) const
+	inline float& Vector4::operator[] (int index)
+	{
+		return values_[index];
+	}
+
+	inline const float& Vector4::operator[] (int index) const
 	{
 		return values_[index];
 	}
